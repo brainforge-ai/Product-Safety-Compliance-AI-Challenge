@@ -1,0 +1,70 @@
+                USER / CLIENT
+        (Streamlit UI / Swagger / API)
+                        │
+                        ▼
+                FASTAPI API LAYER
+        ┌────────────────────────────────┐
+        │ POST /evaluate_product        │
+        │ POST /evaluate_products       │
+        │ GET /docs (Swagger UI)        │
+        │ GET /metrics (Prometheus)     │
+        └────────────────────────────────┘
+                        │
+                        ▼
+                 PROCESSING PIPELINE
+        ┌────────────────────────────────┐
+        │                                │
+        │ 1️⃣ INGESTION                  │
+        │ - PDF (pdfplumber)             │
+        │ - Images (EasyOCR + OpenCV)    │
+        │ - TXT                          │
+        │ - DOCX                         │
+        │ - CSV / XLSX                   │
+        │                                │
+        │ 2️⃣ TEXT EXTRACTION            │
+        │ - OCR for images               │
+        │ - File parsing                 │
+        │                                │
+        │ 3️⃣ INGREDIENT EXTRACTION      │
+        │ - Regex ingredient detection   │
+        │ - Product name extraction      │
+        │                                │
+        │ 4️⃣ NORMALIZATION              │
+        │ - lowercase                    │
+        │ - remove punctuation           │
+        │ - remove units & noise         │
+        │                                │
+        │ 5️⃣ CHEMICAL MATCHING          │
+        │ - Sentence Transformer         │
+        │ - PubChem synonym expansion    │
+        │ - semantic similarity          │
+        │                                │
+        │ 6️⃣ DECISION ENGINE            │
+        │ - If forbidden ingredient      │
+        │     → REJECT                   │
+        │ - Else                         │
+        │     → ACCEPT                   │
+        │                                │
+        └────────────────────────────────┘
+                        │
+                        ▼
+                    RESPONSE
+            JSON Decision Output
+
+{
+  product_name
+  status
+  reason[]
+  confidence
+  file_name
+}
+
+                        │
+                        ▼
+                   MONITORING
+          Prometheus + Grafana
+
+        • API request count
+        • Latency
+        • Error rate
+        • Dashboard visualization

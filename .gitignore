@@ -1,0 +1,21 @@
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache/build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Test/type/tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Notebook/editor/OS files
+.ipynb_checkpoints/
+.vscode/
+.DS_Store
+Thumbs.db
