@@ -2,15 +2,19 @@
 
 This plan breaks the build described in `docs/ARCHITECTURE.md` into small, independently verifiable phases. Every phase ends with the same three steps: run the test suite, run a manual verification pass, then commit. No phase should be considered done until its tests pass and its commit is made; the next phase should not start on top of an unverified one.
 
+**Commit policy:** commits are gated on explicit user permission. Each phase below still lists a suggested commit message for when that permission is given, but the agent must not run `git commit` (or `git add` in preparation for one) at the end of a phase by default. Verification (tests + manual checks) still happens at the end of every phase regardless; only the act of committing waits for a go-ahead.
+
 **Convention used below:**
 - **Sub-tasks**: concrete implementation steps for the phase.
 - **Technical notes**: implementation details, gotchas, and references back to `docs/ARCHITECTURE.md`.
 - **Verification**: what to run/check before committing.
-- **Commit**: the commit message to use once verification passes.
+- **Commit**: the suggested commit message, to be used only once the user explicitly grants permission to commit.
 
 ---
 
 ## Phase 0: Repository & Environment Scaffolding
+
+**Status:** Done
 
 **Goal:** A running, empty-but-real FastAPI app with the full folder layout in place, so every later phase has a home to slot code into.
 
@@ -20,8 +24,9 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 - Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.db`, `.env`, `node_modules/`, `dist/`, `.pytest_cache/`.
 - Add Ruff configuration (`pyproject.toml` `[tool.ruff]` section or `ruff.toml`).
 - Add `.env.example` listing every config flag from `ARCHITECTURE.md` Sections 7 and 8 (`ENABLE_LLM_MATCHING`, `LLM_PROVIDER`, `LLM_MODEL`, `GOOGLE_API_KEY`, `ENABLE_PERSISTENCE`, `DATABASE_URL`, `ENABLE_EMBEDDING_MATCHING`), all with safe defaults or placeholders.
-- Build a minimal FastAPI app (`app/main.py`) with an app factory and a single `GET /api/v1/health` route.
-- Add `pytest` and `httpx` as dev dependencies, with a first smoke test hitting `/api/v1/health`.
+- Build a minimal FastAPI app (`app/main.py`) with an app factory and a single `GET /api/health` route.
+- Add `pytest` and `httpx` as dev dependencies, with a first smoke test hitting `/api/health`.
+- Confirm Swagger UI is served at `/docs` (FastAPI's default; explicitly set `docs_url`/`redoc_url`/`openapi_url` in the app factory for clarity) with a test asserting `/docs` and `/openapi.json` respond.
 
 **Technical notes:**
 - Keep `app/main.py` as just wiring (app factory, router mounting, lifespan hook placeholder); no business logic lives here per the ports-and-adapters principle in Section 3.
@@ -30,7 +35,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 **Verification:**
 - `pip install -r requirements.txt` succeeds inside the venv.
 - `uvicorn app.main:app --reload` boots without error.
-- `curl localhost:8000/api/v1/health` returns `200`.
+- `curl localhost:8000/api/health` returns `200`.
+- `curl localhost:8000/docs` returns `200` (Swagger UI).
 - `pytest` passes (the health smoke test).
 - `ruff check .` passes with no errors.
 
@@ -39,6 +45,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 ---
 
 ## Phase 1: Domain Models, Settings, and Cross-Cutting Concerns
+
+**Status:** Done
 
 **Goal:** The framework-free vocabulary (Pydantic models, settings, logging, exceptions) that every later phase will build on.
 
@@ -62,6 +70,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 ---
 
 ## Phase 2: File Extraction Layer
+
+**Status:** Not started
 
 **Goal:** Given any of the four supported file types, produce a raw text blob (or structured rows, for CSV).
 
@@ -89,6 +99,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 3: Structured Parsing Layer
 
+**Status:** Not started
+
 **Goal:** Turn a raw text blob into a populated `ExtractedProduct` (name, SKU, description, ingredient list).
 
 **Sub-tasks:**
@@ -110,6 +122,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 4: Normalization & Molecular Formula Parser
 
+**Status:** Not started
+
 **Goal:** Canonicalize ingredient strings so downstream matching tiers compare apples to apples.
 
 **Sub-tasks:**
@@ -128,6 +142,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 ---
 
 ## Phase 5: Rule-Based Matching Pipeline (Tiers 1-4) & Decision Engine
+
+**Status:** Not started
 
 **Goal:** The deterministic backbone of the system: exact, formula, fuzzy, and acronym matching, composed into a pipeline, feeding an accept/reject decision.
 
@@ -153,6 +169,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 6: Persistence Layer (Toggleable SQLite)
 
+**Status:** Not started
+
 **Goal:** Evaluation history and forbidden-list versioning, fully removable via one flag.
 
 **Sub-tasks:**
@@ -176,10 +194,12 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 7: API Layer
 
+**Status:** Not started
+
 **Goal:** Wire everything built so far behind the REST endpoints defined in Section 10 of `ARCHITECTURE.md`.
 
 **Sub-tasks:**
-- Define request/response schemas in `api/v1/schemas/` mirroring the exact JSON contract from the challenge README plus the additive `matches` field.
+- Define request/response schemas in `api/schemas/` mirroring the exact JSON contract from the challenge README plus the additive `matches` field.
 - Implement routers: `routes_health.py`, `routes_evaluate.py` (`/evaluate`, `/evaluate/batch`, `/evaluate/by-path`, `/evaluate/batch-samples`), `routes_forbidden_list.py` (`GET`/`POST /forbidden-ingredients`).
 - Implement `services/evaluation_service.py`: orchestrates extraction, parsing, normalization, matching, decisioning, and (optionally) persistence for a single product; a batch variant runs multiple products concurrently with a bounded `asyncio.Semaphore`.
 - Implement `services/forbidden_list_service.py`: handles CSV upload/validation and delegates to the forbidden-list repository.
@@ -199,6 +219,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 ---
 
 ## Phase 8: Optional AI Tiers (Local Embeddings + Gemini via Pydantic AI)
+
+**Status:** Not started
 
 **Goal:** Add tiers 5 and 6 from Section 6 of `ARCHITECTURE.md`, fully feature-flagged and never required for the system to function.
 
@@ -225,6 +247,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 9: Frontend Application
 
+**Status:** Not started
+
 **Goal:** A lean React UI covering evaluate, results, and forbidden-list management.
 
 **Sub-tasks:**
@@ -245,6 +269,8 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 ---
 
 ## Phase 10: Documentation, Packaging, and Final Validation
+
+**Status:** Not started
 
 **Goal:** Everything needed for someone else to clone the repo and run it successfully, plus a final end-to-end sanity pass.
 

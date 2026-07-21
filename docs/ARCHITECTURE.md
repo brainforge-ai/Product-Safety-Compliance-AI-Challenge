@@ -201,7 +201,7 @@ DATABASE_URL=sqlite:///./data/app.db
 
 Implemented as a repository interface (`EvaluationRepository`) with two implementations selected once at startup via dependency injection:
 
-- `SqliteEvaluationRepository`: writes evaluation results and forbidden-list versions to SQLite; backs the `GET /api/v1/products` history endpoint.
+- `SqliteEvaluationRepository`: writes evaluation results and forbidden-list versions to SQLite; backs the `GET /api/products` history endpoint.
 - `NoopEvaluationRepository`: no-op; the system runs fully stateless (recomputing everything per request, no history endpoint data).
 
 Flipping `ENABLE_PERSISTENCE` never requires touching service or route code; only the DI wiring at startup changes which implementation is bound.
@@ -213,7 +213,7 @@ backend/
   app/
     main.py                 # FastAPI app factory
     core/                    # settings (pydantic-settings), logging, exceptions
-    api/v1/                  # routers + pydantic request/response schemas
+    api/                     # routers + pydantic request/response schemas (no version prefix; see Section 10)
     domain/                  # framework-free core logic
       extraction/            # pdf/image/text/csv extractors + file type detector
       parsing/                # structured field/ingredient parser + LLM extraction fallback
@@ -243,7 +243,7 @@ docs/
 
 ## 10. API Design
 
-Response contract preserves the exact shape from the challenge README, with additive fields for transparency:
+Response contract preserves the exact shape from the challenge README, with additive fields for transparency. Routes are mounted directly under `/api` with no version segment, kept simple since this is a single-purpose service rather than a long-lived multi-client API; a version prefix can be reintroduced later if it's ever needed. Interactive Swagger UI is served at `/docs` (ReDoc at `/redoc`, raw schema at `/openapi.json`).
 
 ```json
 {
@@ -258,14 +258,14 @@ Response contract preserves the exact shape from the challenge README, with addi
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/v1/evaluate` | Upload one file (multipart), returns evaluation JSON |
-| `POST /api/v1/evaluate/batch` | Upload/reference multiple files, processed concurrently with bounded parallelism |
-| `POST /api/v1/evaluate/by-path` | Evaluate a file already on disk (useful for `product_index.csv`-style batch runs) |
-| `POST /api/v1/evaluate/batch-samples` | First-class endpoint that reads `product_index.csv` and evaluates every mapped product file in one call |
-| `GET /api/v1/products` | Paginated evaluation history (only populated when `ENABLE_PERSISTENCE=true`) |
-| `GET /api/v1/forbidden-ingredients` | Fetch the active forbidden list |
-| `POST /api/v1/forbidden-ingredients` | Replace/upload a custom forbidden list (CSV); never hardcoded |
-| `GET /api/v1/health` | Liveness/readiness probe |
+| `POST /api/evaluate` | Upload one file (multipart), returns evaluation JSON |
+| `POST /api/evaluate/batch` | Upload/reference multiple files, processed concurrently with bounded parallelism |
+| `POST /api/evaluate/by-path` | Evaluate a file already on disk (useful for `product_index.csv`-style batch runs) |
+| `POST /api/evaluate/batch-samples` | First-class endpoint that reads `product_index.csv` and evaluates every mapped product file in one call |
+| `GET /api/products` | Paginated evaluation history (only populated when `ENABLE_PERSISTENCE=true`) |
+| `GET /api/forbidden-ingredients` | Fetch the active forbidden list |
+| `POST /api/forbidden-ingredients` | Replace/upload a custom forbidden list (CSV); never hardcoded |
+| `GET /api/health` | Liveness/readiness probe |
 
 ## 11. Tooling Choices
 
@@ -321,5 +321,5 @@ Response contract preserves the exact shape from the challenge README, with addi
 gemini-3.1-flash-lite`, chosen over LiteLLM due to its March 2026 supply chain attack (see Section 7) |
 | 2 | Persistence | SQLite via SQLModel, toggleable via `ENABLE_PERSISTENCE` flag (see Section 8) |
 | 3 | OCR engine (venv-first phase) | Tesseract + `pytesseract`; revisit EasyOCR once Docker is introduced |
-| 4 | Batch "evaluate all samples" | First-class API endpoint (`POST /api/v1/evaluate/batch-samples`), reads `product_index.csv` |
+| 4 | Batch "evaluate all samples" | First-class API endpoint (`POST /api/evaluate/batch-samples`), reads `product_index.csv` |
 | 5 | Target versions | Python 3.11, Node 20+ |
