@@ -1,0 +1,552 @@
+{
+  "P-2025-0001": {
+    "filename": "pdfs/P-2025-0001_Pro_Moisturizer.pdf",
+    "product_name": "Pro Moisturizer",
+    "sku": "3A3ZMF8M",
+    "description": "A pro moisturizer formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "CH3COOH",
+      "Ethylhexylglycerin",
+      "C12H22O11",
+      "C2H6O",
+      "Propylparaben",
+      "Triethanolamine"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0002": {
+    "filename": "pdfs/P-2025-0002_Deep_Lotion.pdf",
+    "product_name": "Deep Lotion",
+    "sku": "E7CKW5NG",
+    "description": "A deep lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Potassium Sorbate",
+      "Allantoin",
+      "Methylparaben",
+      "Benzyl Alcohol",
+      "C12H26",
+      "Dimethicone"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0003": {
+    "filename": "pdfs/P-2025-0003_Daily_Moisturizer.pdf",
+    "product_name": "Daily Moisturizer",
+    "sku": "Q4FMYZYC",
+    "description": "A daily moisturizer formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Niacinamide",
+      "Sodium Citrate",
+      "Ascorbic Acid",
+      "C12H24O12",
+      "Retinyl Palmitate",
+      "Xanthan Gum",
+      "Citral",
+      "NaCl",
+      "C2H6O",
+      "Sodium Sulfite",
+      "Dimethicone"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0004": {
+    "filename": "texts/P-2025-0004_Ultra_Conditioner.txt",
+    "product_name": "Ultra Conditioner",
+    "sku": "32OC6UZH",
+    "description": "A ultra conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "H2O",
+      "C2H5OH",
+      "Sodium Hydroxide",
+      "Calcium Carbonate",
+      "Cocamidopropyl Betaine",
+      "Carbomer",
+      "C6H6",
+      "Sodium Sulfite",
+      "Sodium Bicarbonate"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0005": {
+    "filename": "texts/P-2025-0005_Pro_Mask.txt",
+    "product_name": "Pro Mask",
+    "sku": "6OH9SDBD",
+    "description": "A pro mask formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Ascorbic Acid",
+      "C12H26",
+      "Cocamidopropyl Betaine",
+      "H2O2",
+      "Retinyl Palmitate",
+      "Propylparaben",
+      "Allantoin",
+      "Calcium Carbonate",
+      "Triethanolamine",
+      "Sodium Sulfite",
+      "C16H32O2"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0006": {
+    "filename": "images/P-2025-0006_Pure_Lotion.png",
+    "product_name": "Pure Lotion",
+    "sku": "11MKFAZZ",
+    "description": "A pure lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Panthenol",
+      "Coumarin",
+      "Caprylyl Glycol",
+      "Propylparaben",
+      "C4H10",
+      "NaCl",
+      "Magnesium Sulfate",
+      "Citral",
+      "Ethylhexylglycerin",
+      "Parfum"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0007": {
+    "filename": "images/P-2025-0007_Fresh_Lotion.png",
+    "product_name": "Fresh Lotion",
+    "sku": "877VREN9",
+    "description": "A fresh lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Butylparaben",
+      "Aloe Barbadensis Leaf Juice",
+      "Sodium Laureth Sulfate",
+      "Eugenol",
+      "C18H3402",
+      "Sodium Metabisulfite",
+      "C9H804",
+      "Potassium Sorbate",
+      "\u20ac12H24012",
+      "C8H10N402",
+      "Sodium Citrate",
+      "C3H60",
+      "Triclosan"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0008": {
+    "filename": "pdfs/P-2025-0008_Radiant_Shampoo.pdf",
+    "product_name": "Radiant Shampoo",
+    "sku": "ERTJ5PHT",
+    "description": "A radiant shampoo formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Tocopherol",
+      "Butylparaben",
+      "C2H4O2",
+      "C6H6",
+      "Urea",
+      "C20H40O2",
+      "Calcium Carbonate",
+      "Linalool",
+      "Sodium Laureth Sulfate",
+      "Carbomer",
+      "Dimethicone",
+      "1,4-Dioxane"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0009": {
+    "filename": "pdfs/P-2025-0009_Pro_Lotion.pdf",
+    "product_name": "Pro Lotion",
+    "sku": "IHCWI64C",
+    "description": "A pro lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Sodium Sulfite",
+      "Linalool",
+      "Arginine",
+      "Triethanolamine",
+      "C8H10N4O2",
+      "C12H24O12",
+      "C18H34O2"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0010": {
+    "filename": "pdfs/P-2025-0010_Deep_Conditioner.pdf",
+    "product_name": "Deep Conditioner",
+    "sku": "23GDPPQ0",
+    "description": "A deep conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Ethylhexylglycerin",
+      "Sodium Laureth Sulfate",
+      "C2H4O2",
+      "C3H8O3",
+      "Coumarin",
+      "C16H32O2",
+      "Sodium Lauryl Sulfate",
+      "Carbomer",
+      "Geraniol",
+      "C2H5OH",
+      "Sodium Bicarbonate"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0011": {
+    "filename": "images/P-2025-0011_Daily_Shampoo.png",
+    "product_name": "Daily Shampoo",
+    "sku": "KI7P5TB9",
+    "description": "A daily shampoo formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Glycerin",
+      "Phenoxyethanol",
+      "Aloe Barbadensis Leaf Juice",
+      "Niacinamide",
+      "Butyrospermum Parkii Butter",
+      "Sodium Citrate",
+      "Coumarin",
+      "Caprylyl Glycol",
+      "C16H3202",
+      "Tocopherol",
+      "Citric Acid",
+      "Benzyl Alcohol"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0012": {
+    "filename": "texts/P-2025-0012_Daily_Moisturizer.txt",
+    "product_name": "Daily Moisturizer",
+    "sku": "72KZ02XR",
+    "description": "A daily moisturizer formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Methylparaben",
+      "Arginine",
+      "Sodium Laureth Sulfate",
+      "Coumarin",
+      "C6H6",
+      "Ascorbic Acid",
+      "Citric Acid",
+      "Formaldehyde"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0013": {
+    "filename": "texts/P-2025-0013_Radiant_Lotion.txt",
+    "product_name": "Radiant Lotion",
+    "sku": "F8CGVYIE",
+    "description": "A radiant lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Sodium Citrate",
+      "Potassium Sorbate",
+      "Benzyl Alcohol",
+      "C4H10",
+      "C7H6O2",
+      "Methylparaben",
+      "Sodium Metabisulfite",
+      "Calcium Carbonate",
+      "Ascorbic Acid",
+      "Triethanolamine"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0014": {
+    "filename": "texts/P-2025-0014_Max_Conditioner.txt",
+    "product_name": "Max Conditioner",
+    "sku": "JEXQ77AW",
+    "description": "A max conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Ethylhexylglycerin",
+      "Parfum",
+      "Arginine",
+      "Calcium Carbonate",
+      "Cocamidopropyl Betaine",
+      "C12H24O12",
+      "Panthenol",
+      "C18H34O2",
+      "Sodium Benzoate",
+      "Limonene"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0015": {
+    "filename": "pdfs/P-2025-0015_Gentle_Shampoo.pdf",
+    "product_name": "Gentle Shampoo",
+    "sku": "PTK93TYT",
+    "description": "A gentle shampoo formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Caprylyl Glycol",
+      "Xanthan Gum",
+      "Calcium Carbonate",
+      "Dimethicone",
+      "C18H34O2",
+      "Sodium Lauryl Sulfate",
+      "C6H6",
+      "Sodium Sulfite",
+      "Parfum",
+      "Eugenol",
+      "Sodium Hydroxide"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0016": {
+    "filename": "texts/P-2025-0016_Max_Conditioner.txt",
+    "product_name": "Max Conditioner",
+    "sku": "Y4SJ6BW3",
+    "description": "A max conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Aqua",
+      "C7H6O2",
+      "Triethanolamine",
+      "Calcium Carbonate",
+      "Benzyl Alcohol",
+      "C6H6"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0017": {
+    "filename": "images/P-2025-0017_Daily_Lotion.png",
+    "product_name": "Daily Lotion",
+    "sku": "AC56T4UF",
+    "description": "A daily lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Potassium Sorbate",
+      "Butylparaben",
+      "C8H10N402",
+      "Geraniol",
+      "C20H4002",
+      "Panthenol",
+      "Caprylyl Glycol"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0018": {
+    "filename": "pdfs/P-2025-0018_Pure_Toner.pdf",
+    "product_name": "Pure Toner",
+    "sku": "25OWF759",
+    "description": "A pure toner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Panthenol",
+      "C3H6O",
+      "Citric Acid",
+      "Geraniol",
+      "C6H6",
+      "C12H24O12",
+      "Niacinamide",
+      "H2O",
+      "Butyrospermum Parkii Butter",
+      "C2H4O2",
+      "C7H6O2",
+      "C16H32O2"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0019": {
+    "filename": "pdfs/P-2025-0019_Active_Moisturizer.pdf",
+    "product_name": "Active Moisturizer",
+    "sku": "FZNBQH7M",
+    "description": "A active moisturizer formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Allantoin",
+      "Urea",
+      "Citric Acid",
+      "Retinyl Palmitate",
+      "Tocopherol",
+      "Niacinamide",
+      "Xanthan Gum",
+      "C16H32O2",
+      "Sodium Benzoate",
+      "H2O2",
+      "C9H8O4",
+      "Panthenol"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0020": {
+    "filename": "images/P-2025-0020_Daily_Lotion.png",
+    "product_name": "Daily Lotion",
+    "sku": "LASJU9BV",
+    "description": "A daily lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "NaCl",
+      "C16H3202",
+      "Dimethicone",
+      "H202",
+      "C20H4002",
+      "Sodium Metabisulfite",
+      "Ethylhexylglycerin",
+      "Triethanolamine",
+      "Coumarin"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0021": {
+    "filename": "pdfs/P-2025-0021_Ultra_Lotion.pdf",
+    "product_name": "Ultra Lotion",
+    "sku": "7TZ0YNCX",
+    "description": "A ultra lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "NaCl",
+      "Carbomer",
+      "Propylparaben",
+      "Butylparaben",
+      "C7H6O2",
+      "Butyrospermum Parkii Butter",
+      "Ascorbic Acid",
+      "Tocopherol"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0022": {
+    "filename": "texts/P-2025-0022_Radiant_Shampoo.txt",
+    "product_name": "Radiant Shampoo",
+    "sku": "GXN0GUO4",
+    "description": "A radiant shampoo formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Sodium Metabisulfite",
+      "Butyrospermum Parkii Butter",
+      "C16H32O2",
+      "C6H8O7",
+      "Allantoin",
+      "Urea",
+      "Limonene",
+      "C3H8O3"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0023": {
+    "filename": "images/P-2025-0023_Deep_Shampoo.png",
+    "product_name": "Deep Shampoo",
+    "sku": "XKXWD8IL",
+    "description": "A deep shampoo formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Tocopherol",
+      "Sodium Hydroxide",
+      "Citric Acid",
+      "Potassium Sorbate",
+      "Carbomer",
+      "Aloe Barbadensis Leaf Juice",
+      "Butylparaben",
+      "C12H26",
+      "H202",
+      "Sodium Benzoate",
+      "Allantoin",
+      "Butyrospermum Parkii Butter"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0024": {
+    "filename": "texts/P-2025-0024_Pro_Conditioner.txt",
+    "product_name": "Pro Conditioner",
+    "sku": "ZNOFY645",
+    "description": "A pro conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "C12H26",
+      "Urea",
+      "Panthenol",
+      "C12H24O12",
+      "Citric Acid",
+      "Sodium Sulfite",
+      "Carbomer",
+      "C2H5OH",
+      "Geraniol",
+      "Sodium Laureth Sulfate",
+      "Allantoin",
+      "Cocamidopropyl Betaine"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0025": {
+    "filename": "images/P-2025-0025_Radiant_Lotion.png",
+    "product_name": "Radiant Lotion",
+    "sku": "V86WZS3T",
+    "description": "A radiant lotion formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "C9H804",
+      "C20H4002",
+      "Calcium Carbonate",
+      "Sodium Citrate",
+      "C4H10",
+      "NaCl",
+      "Xanthan Gum"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0026": {
+    "filename": "images/P-2025-0026_Radiant_Sunscreen.png",
+    "product_name": "Radiant Sunscreen",
+    "sku": "WJCKJLTE",
+    "description": "A radiant sunscreen formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "H202",
+      "Lactic Acid",
+      "Arginine",
+      "Cocamidopropyl Betaine",
+      "Butyrospermum Parkii Butter",
+      "Linalool",
+      "Niacinamide"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0027": {
+    "filename": "texts/P-2025-0027_Daily_Cleanser.txt",
+    "product_name": "Daily Cleanser",
+    "sku": "HP6VZ41N",
+    "description": "A daily cleanser formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "C12H22O11",
+      "Propylparaben",
+      "H2O2",
+      "C4H10",
+      "Sodium Bicarbonate",
+      "C6H6"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0028": {
+    "filename": "images/P-2025-0028_Pro_Conditioner.png",
+    "product_name": "Pro Conditioner",
+    "sku": "RJRNY204",
+    "description": "A pro conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Citric Acid",
+      "H20",
+      "Geraniol",
+      "Benzyl Alcohol",
+      "C6H807",
+      "Arginine",
+      "Cocamidopropyl Betaine"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0029": {
+    "filename": "images/P-2025-0029_Fresh_Cleanser.png",
+    "product_name": "Fresh Cleanser",
+    "sku": "JLQM5K8P",
+    "description": "A fresh cleanser formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Benzyl Alcohol",
+      "C9H804",
+      "Sodium Chloride",
+      "Sodium Lauryl Sulfate",
+      "Eugenol",
+      "Panthenol",
+      "Dimethicone",
+      "C6H807",
+      "Sodium Benzoate",
+      "H202",
+      "\u20ac12H24012",
+      "Coumarin"
+    ],
+    "needs_llm_fallback": false
+  },
+  "P-2025-0030": {
+    "filename": "texts/P-2025-0030_Active_Conditioner.txt",
+    "product_name": "Active Conditioner",
+    "sku": "4WIRE8QJ",
+    "description": "A active conditioner formulated with selected active compounds for everyday use.",
+    "ingredients": [
+      "Niacinamide",
+      "Dimethicone",
+      "Ascorbic Acid",
+      "Butylparaben",
+      "Sodium Lauryl Sulfate",
+      "Methylparaben",
+      "Glycerin",
+      "C12H24O12"
+    ],
+    "needs_llm_fallback": false
+  }
+}

@@ -99,7 +99,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 3: Structured Parsing Layer
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** Turn a raw text blob into a populated `ExtractedProduct` (name, SKU, description, ingredient list).
 
