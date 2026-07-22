@@ -71,7 +71,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 2: File Extraction Layer
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** Given any of the four supported file types, produce a raw text blob (or structured rows, for CSV).
 
@@ -132,6 +132,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 **Technical notes:**
 - The formula parser only needs to handle simple flat formulas (no nested parentheses/hydrates) since that is what appears in the dataset; document this as a known limitation rather than over-engineering it.
+- **OCR formula corruption (observed in Phase 2 spot-checks):** Tesseract reliably misreads capital `O` as digit `0` in formulas (`H2O2` → `H202`, `C8H10N4O2` → `C8H10N402`), and occasionally misreads a leading `C` as `€` (`C12H24O12` → `€12H24012`). Since `forbidden_ingredients.csv` contains formula entries, an uncorrected misread on a scanned product causes a false **Accept** — the worst-case failure for a compliance system. Real corrupted samples are captured in `backend/tests/fixtures/ocr_formula_corruption_samples.json`. The formula parser (or a pre-parser normalization step) should treat `0` adjacent to element-like letters as a plausible `O`, and the matching pipeline should be tested against these exact corrupted strings, not just clean synthetic ones.
 
 **Verification:**
 - `pytest` passes: normalization idempotency tests, formula equivalence tests (including reordered element sequences), and rejection of non-formula strings (e.g. `"Sodium Hydroxide"` is not treated as a formula).

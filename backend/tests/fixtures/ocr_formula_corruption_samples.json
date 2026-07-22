@@ -1,0 +1,11 @@
+{
+  "_comment": "Observed Tesseract OCR misreadings of chemical formulas from the sample image labels (Phase 2 spot-check). Formula parsing (Phase 4) and matching (Phase 5) must be robust to these, since forbidden_ingredients.csv contains formula entries (e.g. H2O2, C6H6, C8H10N4O2) that a scanned product could contain.",
+  "samples": [
+    {"correct": "H2O2", "ocr_output": "H202", "note": "capital O misread as digit 0"},
+    {"correct": "C8H10N4O2", "ocr_output": "C8H10N402", "note": "O misread as 0"},
+    {"correct": "C20H40O2", "ocr_output": "C20H4002", "note": "O misread as 0"},
+    {"correct": "C9H8O4", "ocr_output": "C9H804", "note": "O misread as 0"},
+    {"correct": "C6H8O7", "ocr_output": "C6H807", "note": "O misread as 0"},
+    {"correct": "C12H24O12", "ocr_output": "€12H24012", "note": "leading C misread as euro sign, O misread as 0"}
+  ]
+}

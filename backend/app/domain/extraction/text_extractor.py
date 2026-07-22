@@ -1,0 +1,15 @@
+"""Direct read of plain-text product files."""
+
+from pathlib import Path
+
+from app.core.exceptions import ExtractionError
+
+
+class TextExtractor:
+    def extract(self, path: Path) -> str:
+        try:
+            return path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return path.read_text(encoding="latin-1")
+        except OSError as exc:
+            raise ExtractionError(f"Could not read text file: {path}") from exc
