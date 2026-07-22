@@ -122,7 +122,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 4: Normalization & Molecular Formula Parser
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** Canonicalize ingredient strings so downstream matching tiers compare apples to apples.
 
@@ -132,7 +132,10 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 **Technical notes:**
 - The formula parser only needs to handle simple flat formulas (no nested parentheses/hydrates) since that is what appears in the dataset; document this as a known limitation rather than over-engineering it.
-- **OCR formula corruption (observed in Phase 2 spot-checks):** Tesseract reliably misreads capital `O` as digit `0` in formulas (`H2O2` → `H202`, `C8H10N4O2` → `C8H10N402`), and occasionally misreads a leading `C` as `€` (`C12H24O12` → `€12H24012`). Since `forbidden_ingredients.csv` contains formula entries, an uncorrected misread on a scanned product causes a false **Accept** — the worst-case failure for a compliance system. Real corrupted samples are captured in `backend/tests/fixtures/ocr_formula_corruption_samples.json`. The formula parser (or a pre-parser normalization step) should treat `0` adjacent to element-like letters as a plausible `O`, and the matching pipeline should be tested against these exact corrupted strings, not just clean synthetic ones.
+- **OCR formula corruption (observed in Phase 2 spot-checks):** Tesseract reliably misreads capital `O` as digit `0` in formulas (`H2O2` → `H202`, `C8H10N4O2` → `C8H10N402`), and occasionally misreads a leading `C` as `€` (`C12H24O12` → `€12H24012`). Since `forbidden_ingredients.csv` contains formula entries, an uncorrected misread on a scanned product causes a false **Accept** — the worst-case failure for a compliance system. Real corrupted samples are captured in `backend/tests/fixtures/ocr_formula_corruption_samples.json`.
+  - **Correction does NOT belong in this phase's parser.** `parse_formula` must stay strict (no guessing): context-free, a corrupted string like `C20H4002` is genuinely ambiguous (`H:4002` vs `H:40,O:2` vs `H:4,O:2` are all syntactically valid parses; neither fewest-edits nor smallest-count breaks the tie). `is_formula`/`parse_formula` should stay permissive enough that corrupted strings are still *recognized as formula-shaped* (so they route into the formula matching tier at all), but must not attempt to resolve which correction is "true".
+  - **Correction belongs in Phase 5's formula matcher instead**, where the ambiguity is decidable: given a specific forbidden-list formula to test against, try `0→O` (and `€→C`) corrected variants of the product ingredient and check whether *any* variant's strict parse equals that forbidden formula. The forbidden list is the oracle that disambiguates; a wrong variant simply fails to match rather than needing to be identified as wrong up front.
+  - Discriminating regression check for Phase 5: sample product **P-2025-0026 (Radiant Sunscreen)** must come out **Rejected** — its only forbidden ingredient is OCR-corrupted `H202` (true `H2O2`), and every other ingredient is clean, so its Accept/Reject outcome flips entirely on this correction working (P-2025-0007/0029 also carry a corrupted formula but have another *clean-text* forbidden ingredient too, so they'd reject regardless — 0026 is the true canary). Confirm it's caught via the formula tier specifically, not incidentally by fuzzy matching.
 
 **Verification:**
 - `pytest` passes: normalization idempotency tests, formula equivalence tests (including reordered element sequences), and rejection of non-formula strings (e.g. `"Sodium Hydroxide"` is not treated as a formula).
@@ -158,6 +161,12 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 **Technical notes:**
 - The acronym matcher must compute initials generically from any multi-word forbidden ingredient name; it must not contain any dataset-specific lookup table (per the generalization principle in Section 3).
 - Include the README's `Glucose` vs `D-Glucopyranose` example as an explicit synthetic test case for the fuzzy tier, since it doesn't occur in the sample dataset itself.
+- **Formula matcher must gate correction on "parsed but didn't match", not on "failed to parse".** Per Phase 4, `parse_formula("H202")` *succeeds* (returns `{H: 202}`) — it just parses to the wrong value. So the formula tier must: (1) try direct `formulas_equal(ingredient, forbidden_entry)`; (2) if that's False, try `0→O` and `€→C` corrected variants of the ingredient against that same forbidden entry. Gating correction on `parse_formula(...) is None` instead would silently skip `H202`-style corruption, since it never returns `None` in the first place.
+- **Hand-derived Accept/Reject ledger for all 30 samples** (independent ground truth, built from `forbidden_ingredients.csv` against each sample's parsed ingredients — not from the matcher itself, so it's safe to test against without circularity):
+  - **Accepted:** P-2025-0003, 0014, 0022, 0024, 0025, 0028.
+  - **Rejected:** every other sample, **except** P-2025-0026, which is conditional — see below.
+  - **P-2025-0026 (Radiant Sunscreen) is the formula-correction canary.** Its only forbidden ingredient is OCR-corrupted `H202` (true `H2O2`); every other ingredient is clean. It comes out **Accepted if formula correction is missing/broken, Rejected if it works** — the one sample whose outcome flips entirely on that logic. (P-2025-0007/0017/0020/0023/0029 also carry OCR-corrupted formulas, but each also carries an independent clean-text forbidden ingredient, so they reject regardless of correction — 0026 is the only sample where correction is load-bearing.)
+  - **P-2025-0024 is the fuzzy-matcher false-positive canary.** It contains "Sodium Laureth Sulfate" (SLES) — a different real ingredient from the forbidden "Sodium **Lauryl** Sulfate" (SLS), differing only in one middle token. It must come out **Accepted**; a naive rapidfuzz threshold (~80-85 on token/partial ratio) will likely over-fire and wrongly reject it. Tune the fuzzy threshold against this case specifically, not just against true-positive fuzzy cases like `Glucose`/`D-Glucopyranose`.
 
 **Verification:**
 - `pytest` passes: isolated tests per matcher tier (including the `BHA` vs `Butylated Hydroxyanisole` acronym case and the `Glucose`/`D-Glucopyranose` fuzzy case), a full-pipeline test on a synthetic ingredient/forbidden list, and decision-engine tests for both `Accepted` and `Rejected` outcomes.
