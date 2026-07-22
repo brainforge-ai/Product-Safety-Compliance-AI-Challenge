@@ -140,10 +140,12 @@ flowchart TD
 |---|---|---|---|
 | 1 | Normalized exact match (lowercase, strip punctuation/whitespace) | Case/punctuation/whitespace differences | ~0ms |
 | 2 | Formula canonicalization (parse `C6H6`/`H2O2` into a sorted element:count dict, order-independent) | Formula written in different element order | ~0ms |
-| 3 | `rapidfuzz` token/partial ratio | Typos, plural/singular, shared stems (e.g. `Glucose` vs `D-Glucopyranose` share enough substring overlap to likely be caught here) | ~1ms |
+| 3 | `rapidfuzz` ratio on normalized text, conservative threshold (>=90) | Typos, plural/singular, minor OCR noise in names | ~1ms |
 | 4 | Acronym heuristic: compute initials of each multi-word forbidden ingredient name, compare against short all-caps ingredient tokens | `BHA` vs `Butylated Hydroxyanisole`, a generic algorithm, not a hardcoded lookup table | ~1ms |
-| 5 (optional) | Local sentence-embedding similarity (`sentence-transformers`, fully offline, no network) | Loose semantic/trade-name variants with no lexical overlap | ~10-50ms |
+| 5 (optional) | Local sentence-embedding similarity (`sentence-transformers`, fully offline, no network) | Loose semantic/trade-name variants with no lexical overlap **to be empirically verified in Phase 8, see below** | ~10-50ms |
 | 6 (optional) | Gemini reasoning pass via Pydantic AI, batched per product, cached, feature-flagged | Genuine chemistry knowledge: INCI to CAS to trade name equivalence no local heuristic can generalize to | ~200ms-1s, costs credits, needs API key |
+
+**Correction (Phase 5 finding):** the challenge README's own worked example — detecting `Glucose` vs `D-Glucopyranose` as a naming-convention variation — was originally assumed to be a tier-3 fuzzy case. It is not: every standard string-similarity metric tested (rapidfuzz `ratio`/`partial_ratio`/`token_sort_ratio`/`token_set_ratio`/`WRatio`, Levenshtein distance, Jaro-Winkler) scores `Glucose`/`D-Glucopyranose` (~0.65-0.76) *lower* than the real sample P-2025-0024's `Sodium Laureth Sulfate` vs the forbidden `Sodium Lauryl Sulfate` (~0.85-0.91) — a pair that must NOT match (0024 must be Accepted). No fuzzy threshold can catch the true positive without also false-rejecting the real sample, so the threshold is set conservatively (>=90) to protect 0024, which means fuzzy will not catch the README's Glucose example. Likely (not yet verified — Phase 8's first task) the same inversion holds for tier-5 embeddings, since both pairs share comparable subword/character overlap. This makes tier 6 (LLM chemistry reasoning) the probable *only* reliable path to satisfying this specific README requirement, which is in tension with the "must work with zero API keys" goal; see Phase 8's open risk note in `IMPLEMENTATION_PLAN.md`.
 
 Tiers 5-6 are feature-flagged and optional. The system must be fully functional and testable using only tiers 1-4, since an LLM API key cannot be assumed present in the grading environment.
 
