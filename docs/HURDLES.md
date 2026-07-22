@@ -33,3 +33,11 @@ Running log of unexpected problems found during implementation and how we handle
 **Formula matcher must gate correction on "parsed but wrong," not "failed to parse."** `parse_formula("H202")` *succeeds* (returns `{H: 202}`) — it doesn't return `None`. Gating the OCR-correction attempt on a `None` result would silently skip exactly the corruption it's meant to catch.
 
 **"BHA" doesn't decompose from "Butylated Hydroxyanisole" as one word.** Generic per-word-initials only yields "BH" from the 2-word spelling. Used the legitimate alternate 3-word spelling ("Butylated Hydroxy Anisole") for the test instead of building compound-word decomposition — documented as a known limitation, not fixed.
+
+---
+
+## Phase 6: Persistence Layer
+
+**`SQLModel.metadata.create_all()` silently created zero tables in a real run.** SQLModel only registers a table class once it's been imported somewhere in the process; `create_db_and_tables()` called `create_all()` without ever importing `infra/db/models.py`, so a real server boot produced an empty `.db` file. Every automated test passed anyway, since each test module imported the table classes directly, masking the bug. Caught only via a manual server run + `sqlite3` inspection. Fixed by importing the models module inside `create_db_and_tables()` itself. Added a subprocess-spawned regression test, since an in-process test can't fail here once any other test module has imported the models.
+
+**Offset pagination needs a tiebreaker.** `list_evaluations` originally sorted by `created_at DESC` alone; two records with the same timestamp (plausible once Phase 7 batch-evaluates concurrently) would make offset pagination skip or duplicate rows. Fixed by tie-breaking on `id DESC`.

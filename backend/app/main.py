@@ -12,12 +12,22 @@ from fastapi import FastAPI
 from app.api.routes_health import router as health_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from app.infra.db.session import create_db_and_tables, create_db_engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup/shutdown hooks (DB table creation, default forbidden list
-    # loading, heavy model warm-up) are added in later phases.
+    settings = get_settings()
+    app.state.settings = settings
+
+    # Toggling ENABLE_PERSISTENCE changes only this wiring; no service/route
+    # code branches on the flag (ARCHITECTURE.md Section 8).
+    if settings.enable_persistence:
+        app.state.db_engine = create_db_engine(settings.database_url)
+        create_db_and_tables(app.state.db_engine)
+
+    # Default forbidden list loading and heavy model warm-up are added in
+    # later phases.
     yield
 
 

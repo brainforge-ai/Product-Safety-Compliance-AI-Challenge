@@ -5,6 +5,7 @@ client, per the ports-and-adapters principle in docs/ARCHITECTURE.md
 (Section 3).
 """
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Literal
 
@@ -59,3 +60,14 @@ class EvaluationResult(BaseModel):
     status: Literal["Accepted", "Rejected"]
     reason: list[str] = Field(default_factory=list)
     matches: list[MatchResult] = Field(default_factory=list)
+
+
+class StoredEvaluation(BaseModel):
+    """An `EvaluationResult` as persisted by an `EvaluationRepository`, with the
+    record metadata (id, timestamp) added by the persistence layer itself.
+    """
+
+    id: int | None = None
+    product_id: str | None = None
+    created_at: datetime
+    result: EvaluationResult

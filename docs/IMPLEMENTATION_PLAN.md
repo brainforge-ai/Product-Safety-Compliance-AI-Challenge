@@ -179,7 +179,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 6: Persistence Layer (Toggleable SQLite)
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** Evaluation history and forbidden-list versioning, fully removable via one flag.
 
@@ -192,10 +192,13 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 **Technical notes:**
 - The forbidden-list repository from Phase 5 stays in-memory when persistence is off; when persistence is on, uploaded forbidden lists are additionally versioned and stored via `ForbiddenListVersion`.
+- `EvaluationRepository` is the single protocol (in `domain/persistence/base.py`, framework-free) covering both evaluation-record writes/reads and forbidden-list-version writes; `NoopEvaluationRepository` lives alongside it in `domain/persistence/` since it needs no SQLModel/database dependency, while `SqliteEvaluationRepository` lives in `infra/db/`.
+- **Real bug caught during manual verification: `SQLModel.metadata.create_all()` silently created zero tables in a real server run.** SQLModel only registers a table class on `SQLModel.metadata` when that class has actually been imported somewhere in the process. `app/infra/db/session.py` called `create_all()` without ever importing `app/infra/db/models.py`, and `main.py`'s lifespan hook only imports `session.py` — so in production, `create_db_and_tables()` ran against empty metadata and created an empty database file. Every automated test happened to pass anyway, because test modules imported `EvaluationRecord`/`ForbiddenListVersion` directly, silently registering the tables before `create_all()` ran. Caught only by manually starting the server with `ENABLE_PERSISTENCE=true` and inspecting the resulting `.db` file with `sqlite3`. **Fix:** `create_db_and_tables()` now imports `app.infra.db.models` itself before calling `create_all()`. **Regression guard:** an in-process test can't detect this class of bug at all, since one test module importing the models poisons `SQLModel.metadata` for the whole pytest session; the real guard is a subprocess-spawned test (`tests/integration/test_persistence_lifespan.py`) that boots the app in a fresh interpreter and inspects the created table names.
+- `list_evaluations` orders by `created_at DESC, id DESC` (not `created_at` alone) — a non-unique sort key would make offset-based pagination skip or duplicate rows whenever two records share a timestamp, which concurrent writes (Phase 7's batch endpoints) make possible.
 
 **Verification:**
 - `pytest` passes: a repository round-trip test with `ENABLE_PERSISTENCE=true` against a temporary/in-memory SQLite database, and a test confirming `NoopEvaluationRepository` performs no writes and requires no database.
-- Manual check: toggling `ENABLE_PERSISTENCE` between `true`/`false` and restarting the app produces no code changes, only different DI wiring.
+- Manual check: toggling `ENABLE_PERSISTENCE` between `true`/`false` and restarting the app produces no code changes, only different DI wiring. (This manual check is what surfaced the `create_all()` bug above — automated tests alone missed it.)
 - `ruff check .` passes.
 
 **Commit:** `feat: add toggleable SQLite persistence for evaluation history and forbidden list versions`

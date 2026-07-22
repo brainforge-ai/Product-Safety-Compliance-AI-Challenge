@@ -1,0 +1,55 @@
+"""Engine/session factory for the toggleable SQLite persistence layer.
+
+Reads `DATABASE_URL` from settings; nothing here is invoked unless
+`ENABLE_PERSISTENCE=true` (ARCHITECTURE.md Section 8).
+"""
+
+from pathlib import Path
+
+from sqlalchemy import Engine
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
+
+_SQLITE_FILE_PREFIX = "sqlite:///"
+
+
+def _sqlite_file_path(database_url: str) -> Path | None:
+    """The on-disk path a sqlite URL points at, or None for in-memory/non-sqlite URLs."""
+    if not database_url.startswith(_SQLITE_FILE_PREFIX):
+        return None
+    raw_path = database_url[len(_SQLITE_FILE_PREFIX) :]
+    if raw_path in ("", ":memory:"):
+        return None
+    return Path(raw_path)
+
+
+def create_db_engine(database_url: str) -> Engine:
+    is_sqlite = database_url.startswith("sqlite")
+    file_path = _sqlite_file_path(database_url)
+
+    if is_sqlite and file_path is not None:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    connect_args = {"check_same_thread": False} if is_sqlite else {}
+    # In-memory SQLite is per-connection; pin it to a single shared connection
+    # so every session in the process (and every test) sees the same tables.
+    poolclass = StaticPool if is_sqlite and file_path is None else None
+
+    kwargs = {"connect_args": connect_args}
+    if poolclass is not None:
+        kwargs["poolclass"] = poolclass
+
+    return create_engine(database_url, **kwargs)
+
+
+def create_db_and_tables(engine: Engine) -> None:
+    # Table classes must be imported (registering them on SQLModel.metadata)
+    # before create_all runs; this is the only caller that needs them, so the
+    # import lives here rather than forcing every caller to remember it.
+    from app.infra.db import models  # noqa: F401
+
+    SQLModel.metadata.create_all(engine)
+
+
+def get_session(engine: Engine) -> Session:
+    return Session(engine)
