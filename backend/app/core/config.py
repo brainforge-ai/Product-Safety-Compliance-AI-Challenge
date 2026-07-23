@@ -7,8 +7,14 @@ docs/ARCHITECTURE.md, Section 3). Nothing that requires a real dependency
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The repository root, computed from this file's location so the sample
+# dataset resolves correctly regardless of the process's working directory
+# (backend/app/core/config.py -> core -> app -> backend -> repo root).
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
@@ -34,6 +40,13 @@ class Settings(BaseSettings):
     # --- Persistence (ARCHITECTURE.md Section 8) ---
     enable_persistence: bool = False
     database_url: str = "sqlite:///./data/app.db"
+
+    # --- Sample dataset locations (ARCHITECTURE.md Section 2 / Section 10) ---
+    # Defaults point at the repo-root sample dataset so the app is fully
+    # functional with zero configuration; both are overridable so a grading
+    # environment can point at a different forbidden list / sample directory.
+    default_forbidden_list_path: Path = _REPO_ROOT / "forbidden_ingredients.csv"
+    sample_data_dir: Path = _REPO_ROOT
 
 
 @lru_cache

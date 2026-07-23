@@ -5,6 +5,12 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's DI pattern is `param: T = Depends(...)`; these calls are
+# effectively immutable defaults evaluated once per request by FastAPI
+# itself, not shared mutable state, so B008 doesn't apply to them.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body", "fastapi.Path"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

@@ -7,6 +7,8 @@ either way.
 """
 
 import csv
+from collections.abc import Iterable
+from io import StringIO
 from pathlib import Path
 
 
@@ -17,16 +19,23 @@ class ForbiddenListRepository:
     @classmethod
     def from_csv(cls, path: Path) -> "ForbiddenListRepository":
         with path.open(newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            column = reader.fieldnames[0] if reader.fieldnames else None
-            if column is None:
-                return cls([])
-            entries = [row[column].strip() for row in reader if row.get(column, "").strip()]
+            return cls(parse_csv_entries(f))
 
-        return cls(entries)
+    @classmethod
+    def from_csv_text(cls, text: str) -> "ForbiddenListRepository":
+        return cls(parse_csv_entries(StringIO(text)))
 
     def get_all(self) -> list[str]:
         return list(self._entries)
 
     def replace(self, entries: list[str]) -> None:
         self._entries = list(entries)
+
+
+def parse_csv_entries(lines: Iterable[str]) -> list[str]:
+    """Read the first column of a forbidden-list CSV, from any file-like/line iterable."""
+    reader = csv.DictReader(lines)
+    column = reader.fieldnames[0] if reader.fieldnames else None
+    if column is None:
+        return []
+    return [row[column].strip() for row in reader if row.get(column, "").strip()]

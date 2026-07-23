@@ -20,24 +20,14 @@ _EXTRACTORS = {
     FileType.TEXT: TextExtractor(),
 }
 
-# Hand-derived ground truth (see docs/IMPLEMENTATION_PLAN.md Phase 5 notes):
-# built by manually checking each sample's real ingredients against
-# forbidden_ingredients.csv, independently of this matching pipeline.
-_EXPECTED_ACCEPTED = {
-    "P-2025-0003",
-    "P-2025-0014",
-    "P-2025-0022",
-    "P-2025-0024",
-    "P-2025-0025",
-    "P-2025-0028",
-}
-
 
 def _build_pipeline() -> MatchPipeline:
     return MatchPipeline([ExactMatcher(), FormulaMatcher(), FuzzyMatcher(), AcronymMatcher()])
 
 
-def test_all_30_samples_match_the_hand_derived_ledger(fixtures_dir: Path) -> None:
+def test_all_30_samples_match_the_hand_derived_ledger(
+    fixtures_dir: Path, expected_accepted_product_ids: set[str]
+) -> None:
     repo = ForbiddenListRepository.from_csv(fixtures_dir / "forbidden_ingredients.csv")
     forbidden_list = repo.get_all()
     pipeline = _build_pipeline()
@@ -56,7 +46,7 @@ def test_all_30_samples_match_the_hand_derived_ledger(fixtures_dir: Path) -> Non
 
         result = decide(product, forbidden_list, pipeline)
 
-        expected_status = "Accepted" if product_id in _EXPECTED_ACCEPTED else "Rejected"
+        expected_status = "Accepted" if product_id in expected_accepted_product_ids else "Rejected"
         assert result.status == expected_status, (
             f"{product_id}: expected {expected_status}, got {result.status} "
             f"(reasons={result.reason})"

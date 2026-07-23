@@ -37,3 +37,9 @@ def test_empty_csv_produces_empty_list(tmp_path: Path) -> None:
     repo = ForbiddenListRepository.from_csv(path)
 
     assert repo.get_all() == []
+
+
+def test_from_csv_text_parses_an_uploaded_csv_body() -> None:
+    repo = ForbiddenListRepository.from_csv_text('ingredient\nCoumarin\n"1,4-Dioxane"\n')
+
+    assert repo.get_all() == ["Coumarin", "1,4-Dioxane"]

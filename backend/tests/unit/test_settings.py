@@ -13,6 +13,14 @@ def test_settings_defaults_require_no_configuration() -> None:
     assert settings.database_url == "sqlite:///./data/app.db"
 
 
+def test_default_sample_dataset_paths_resolve_to_the_real_repo_root() -> None:
+    settings = Settings(_env_file=None)
+
+    assert settings.default_forbidden_list_path.name == "forbidden_ingredients.csv"
+    assert settings.default_forbidden_list_path.is_file()
+    assert (settings.sample_data_dir / "product_index.csv").is_file()
+
+
 def test_settings_override_via_environment(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_LLM_MATCHING", "true")
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key")

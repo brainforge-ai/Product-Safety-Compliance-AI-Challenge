@@ -207,7 +207,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 7: API Layer
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** Wire everything built so far behind the REST endpoints defined in Section 10 of `ARCHITECTURE.md`.
 
@@ -221,6 +221,11 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 **Technical notes:**
 - Blocking extraction/OCR work must run via FastAPI's threadpool (`run_in_threadpool`), not directly on the event loop, per Section 12.
 - The `/evaluate/batch-samples` endpoint reads `product_index.csv` and evaluates every mapped file in one call; per-file errors must be isolated so one bad file doesn't fail the whole batch.
+- **Scope addition beyond this phase's sub-task list: `routes_products.py` (`GET /api/products`).** Not named in the sub-tasks above, but explicitly listed in `ARCHITECTURE.md` Section 10's endpoint table, and Phase 6 built `EvaluationRepository.list_evaluations()` specifically to back it — leaving it unwired would make that method dead code. Pulled forward deliberately rather than left for a later phase.
+- **CSV routing decision: `/evaluate` accepts CSV input only when it parses to exactly one product row.** `CsvExtractor` can yield multiple rows (multiple products) from one file, which doesn't fit the single-object README response contract. A CSV with 0 or 2+ rows returns `400` pointing the caller at `/evaluate/batch`; a single-row CSV is accepted and returns the one result, same as any other file type.
+- **`/evaluate/by-path` and `/evaluate/batch-samples` resolve paths under `settings.sample_data_dir` with an explicit traversal guard** (`_resolve_within`, in `routes_evaluate.py`): the candidate path must equal or be nested under the resolved base directory, or the request is rejected with `400`. Necessary because both endpoints accept a path string from the request body/index file.
+- Domain exceptions are mapped to HTTP responses once, at the app level (`main.py`'s two `@app.exception_handler`s), not per-route — `UnsupportedFileTypeError` maps to `415`, every other `AppError` to `422`. Route handlers must NOT catch `AppError` themselves and re-raise as a generic `HTTPException`; doing so shadows the more specific `415` mapping (caught during manual verification — see `HURDLES.md`).
+- `default_forbidden_list_path` / `sample_data_dir` resolve via `Path(__file__).resolve().parents[3]` in `core/config.py`, i.e. they point *outside* `backend/` at the repo-root sample dataset. This degrades gracefully today (missing forbidden list → empty list + warning; missing `product_index.csv` → `404`), but a `backend/`-only Docker image (Phase 10) will boot with an empty forbidden list unless Phase 10 either ships the dataset alongside the image or sets `DEFAULT_FORBIDDEN_LIST_PATH`/`SAMPLE_DATA_DIR` explicitly. Flagged here for Phase 10 to address.
 
 **Verification:**
 - `pytest` passes: `TestClient`-based integration tests hitting `/evaluate` for each of the 30 sample files, a `/evaluate/batch-samples` test, `GET`/`POST /forbidden-ingredients` tests, and a contract test asserting the response shape exactly matches the README's example JSON.
@@ -292,6 +297,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 **Sub-tasks:**
 - Write a root-level setup/run guide (venv activation, `pip install -r requirements.txt`, the Tesseract system-binary install step, required `.env` values, `npm install`/`npm run dev`, example `curl` calls).
 - Add a minimal Dockerfile for the backend (and optionally the frontend) as a documented stretch goal, consistent with the venv-first decision in `ARCHITECTURE.md` Section 11.
+- **Carried from Phase 7:** if the Dockerfile only copies `backend/`, the app boots with an empty forbidden list — `default_forbidden_list_path`/`sample_data_dir` default to the repo root (`images/`, `pdfs/`, `texts/`, `product_index.csv`, `forbidden_ingredients.csv` live one level above `backend/`), which won't exist in a `backend/`-only image. Either copy the sample dataset into the image alongside `backend/`, or set `DEFAULT_FORBIDDEN_LIST_PATH`/`SAMPLE_DATA_DIR` in the Dockerfile/`.env` to wherever it's mounted.
 - Run the full backend test suite and the frontend build one final time, together.
 - Run `/evaluate/batch-samples` against all 30 provided sample files and manually review the Accept/Reject decisions for sanity.
 - Write `docs/LOOM_NOTES.md`: a short talking-points outline for the required Loom walkthrough (architecture summary, key tradeoffs, live demo script).

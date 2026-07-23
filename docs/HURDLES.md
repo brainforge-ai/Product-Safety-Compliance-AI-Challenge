@@ -41,3 +41,17 @@ Running log of unexpected problems found during implementation and how we handle
 **`SQLModel.metadata.create_all()` silently created zero tables in a real run.** SQLModel only registers a table class once it's been imported somewhere in the process; `create_db_and_tables()` called `create_all()` without ever importing `infra/db/models.py`, so a real server boot produced an empty `.db` file. Every automated test passed anyway, since each test module imported the table classes directly, masking the bug. Caught only via a manual server run + `sqlite3` inspection. Fixed by importing the models module inside `create_db_and_tables()` itself. Added a subprocess-spawned regression test, since an in-process test can't fail here once any other test module has imported the models.
 
 **Offset pagination needs a tiebreaker.** `list_evaluations` originally sorted by `created_at DESC` alone; two records with the same timestamp (plausible once Phase 7 batch-evaluates concurrently) would make offset pagination skip or duplicate rows. Fixed by tie-breaking on `id DESC`.
+
+---
+
+## Phase 7: API Layer
+
+**Per-route exception handling shadowed the app-level 415/422 split.** `/evaluate` and `/evaluate/by-path` originally caught `AppError` locally and re-raised a generic `HTTPException(422)` — which ran *before* the global `@app.exception_handler(UnsupportedFileTypeError)` ever got a chance to return `415`. An unsupported file type came back as `422` instead of `415`, caught by a dedicated test. **Fixed** by removing the redundant local catch; exceptions now propagate to the two app-level handlers in `main.py`, the single place mapping domain exceptions to HTTP status.
+
+**Ruff's B008 flags every `Depends(...)` default as a mutable-default bug.** That's FastAPI's standard DI pattern, not a real bug — the call is evaluated once per request by FastAPI itself. Rather than `# noqa` on every route parameter (which was about to be most of them), added `extend-immutable-calls = ["fastapi.Depends", ...]` to `pyproject.toml`'s ruff config.
+
+**A CSV upload can contain multiple products, breaking `/evaluate`'s single-object contract.** `CsvExtractor` yields one row per product, so a multi-row CSV legitimately produces multiple `EvaluationResult`s — but the README's response shape is a single object. **Decision:** `/evaluate` accepts CSV only when it resolves to exactly one row; 0 or 2+ rows returns `400` pointing the caller at `/evaluate/batch`.
+
+**`routes_products.py` (`GET /api/products`) wasn't in Phase 7's sub-task list, added anyway.** `ARCHITECTURE.md` Section 10 lists it, and Phase 6 built `EvaluationRepository.list_evaluations()` specifically to back it; leaving it unwired would make that method dead code. Documented as a deliberate scope pull-forward, not scope creep.
+
+**Default sample-dataset paths point outside `backend/`.** `default_forbidden_list_path`/`sample_data_dir` resolve to the repo root via `parents[3]`, since that's where the real `images/`/`pdfs/`/`texts/`/`product_index.csv`/`forbidden_ingredients.csv` actually live. Degrades gracefully today (missing list → empty + warning). Flagged as a Phase 10 risk: a `backend/`-only Docker image needs the dataset copied in or the two path env vars set explicitly.
