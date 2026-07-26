@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     llm_provider: str = "pydantic_ai"
     llm_model: str = "google:gemini-3.1-flash-lite"
     google_api_key: str | None = None
+    # Not in the original Phase 0 .env.example list; added in Phase 8 so the
+    # LLM tier's fail-open timeout (ARCHITECTURE.md Section 7) is
+    # configurable rather than a hardcoded constant.
+    llm_timeout_seconds: float = 20.0
 
     # --- Optional local embedding matching tier (ARCHITECTURE.md Section 6) ---
     enable_embedding_matching: bool = False

@@ -1,0 +1,12 @@
+# Optional heavy dependencies for the AI matching tiers (ARCHITECTURE.md
+# Section 6/7, Phase 8). Not required for the app to boot or for `pytest` to
+# pass -- ENABLE_EMBEDDING_MATCHING and ENABLE_LLM_MATCHING both default to
+# false, and the tiers they gate are imported lazily. Install only if you
+# want to exercise these tiers locally:
+#
+#   pip install -r requirements-ai.txt
+#
+# sentence-transformers pulls in torch (several hundred MB); kept out of the
+# default requirements.txt so the base app/Docker image stays lean.
+sentence-transformers>=3.0.0
+pydantic-ai>=1.0.0

@@ -7,6 +7,7 @@ either way.
 """
 
 import csv
+import hashlib
 from collections.abc import Iterable
 from io import StringIO
 from pathlib import Path
@@ -30,6 +31,18 @@ class ForbiddenListRepository:
 
     def replace(self, entries: list[str]) -> None:
         self._entries = list(entries)
+
+    def version_hash(self) -> str:
+        """A stable identifier for the current entry set, order-independent
+        and case-insensitive. Used to key the tier-6 LLM response cache
+        (ARCHITECTURE.md Section 7) so a `POST /forbidden-ingredients`
+        upload can never serve a verdict computed against the previous list
+        -- there is no separate `ForbiddenListVersion` row to read here,
+        since persistence is optional and this repository must work whether
+        or not it's enabled.
+        """
+        canonical = "\n".join(sorted(e.strip().lower() for e in self._entries))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def parse_csv_entries(lines: Iterable[str]) -> list[str]:

@@ -10,6 +10,7 @@ def test_settings_defaults_require_no_configuration() -> None:
     assert settings.google_api_key is None
     assert settings.llm_provider == "pydantic_ai"
     assert settings.llm_model == "google:gemini-3.1-flash-lite"
+    assert settings.llm_timeout_seconds == 20.0
     assert settings.database_url == "sqlite:///./data/app.db"
 
 

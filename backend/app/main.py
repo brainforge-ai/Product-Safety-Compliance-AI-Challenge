@@ -20,20 +20,58 @@ from app.core.exceptions import AppError, UnsupportedFileTypeError
 from app.core.logging import setup_logging
 from app.domain.forbidden_list.repository import ForbiddenListRepository
 from app.domain.matching.acronym_matcher import AcronymMatcher
+from app.domain.matching.base import Matcher
 from app.domain.matching.exact_matcher import ExactMatcher
 from app.domain.matching.formula_matcher import FormulaMatcher
 from app.domain.matching.fuzzy_matcher import FuzzyMatcher
+from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.infra.db.session import create_db_and_tables, create_db_engine
 
 logger = logging.getLogger(__name__)
 
 
-def _default_match_pipeline() -> MatchPipeline:
-    # Tiers 5-6 (embedding/LLM) are registered onto this same pipeline in
-    # Phase 8, behind their own flags; tiers 1-4 alone keep the app fully
-    # functional with zero API keys (ARCHITECTURE.md Section 6).
-    return MatchPipeline([ExactMatcher(), FormulaMatcher(), FuzzyMatcher(), AcronymMatcher()])
+def _default_match_pipeline(settings: Settings) -> MatchPipeline:
+    matchers: list[Matcher] = [ExactMatcher(), FormulaMatcher(), FuzzyMatcher(), AcronymMatcher()]
+
+    # Tier 5 (optional): registers onto this same pipeline like any other
+    # Matcher, since embedding lookup is a synchronous, stateless,
+    # per-(ingredient, forbidden_entry) operation -- unlike tier 6, it fits
+    # the existing MatchPipeline shape without any changes (see
+    # docs/IMPLEMENTATION_PLAN.md Phase 8 notes).
+    if settings.enable_embedding_matching:
+        from app.domain.matching.embedding_matcher import EmbeddingMatcher
+        from app.infra.embeddings.sentence_transformer_encoder import encode, warm_up
+
+        warm_up()
+        matchers.append(EmbeddingMatcher(encode))
+
+    # Tiers 1-4 (and 5, if enabled) alone keep the app fully functional with
+    # zero API keys (ARCHITECTURE.md Section 6). Tier 6 (LLM) is NOT
+    # registered here -- see `_build_llm_matcher` and
+    # `domain/matching/llm_matcher.py` for why it's a separate,
+    # product-level, async stage instead.
+    return MatchPipeline(matchers)
+
+
+def _build_llm_matcher(settings: Settings) -> LlmMatcher | None:
+    if not settings.enable_llm_matching:
+        return None
+    if not settings.google_api_key:
+        logger.warning(
+            "ENABLE_LLM_MATCHING is set but GOOGLE_API_KEY is missing; "
+            "tier 6 (LLM matching) will not be registered."
+        )
+        return None
+
+    from app.infra.cache.llm_response_cache import LlmResponseCache
+    from app.infra.llm.pydantic_ai_client import PydanticAiLlmClient
+
+    return LlmMatcher(
+        PydanticAiLlmClient(settings),
+        LlmResponseCache(),
+        timeout_seconds=settings.llm_timeout_seconds,
+    )
 
 
 def _load_default_forbidden_list(settings: Settings) -> ForbiddenListRepository:
@@ -56,7 +94,8 @@ async def lifespan(app: FastAPI):
         create_db_and_tables(app.state.db_engine)
 
     app.state.forbidden_list_repository = _load_default_forbidden_list(settings)
-    app.state.match_pipeline = _default_match_pipeline()
+    app.state.match_pipeline = _default_match_pipeline(settings)
+    app.state.llm_matcher = _build_llm_matcher(settings)
 
     yield
 

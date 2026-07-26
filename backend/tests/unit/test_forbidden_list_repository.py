@@ -43,3 +43,25 @@ def test_from_csv_text_parses_an_uploaded_csv_body() -> None:
     repo = ForbiddenListRepository.from_csv_text('ingredient\nCoumarin\n"1,4-Dioxane"\n')
 
     assert repo.get_all() == ["Coumarin", "1,4-Dioxane"]
+
+
+def test_version_hash_is_stable_for_the_same_entries() -> None:
+    repo = ForbiddenListRepository(["Coumarin", "Propylparaben"])
+
+    assert repo.version_hash() == repo.version_hash()
+
+
+def test_version_hash_is_order_and_case_independent() -> None:
+    a = ForbiddenListRepository(["Coumarin", "Propylparaben"])
+    b = ForbiddenListRepository(["propylparaben", "COUMARIN"])
+
+    assert a.version_hash() == b.version_hash()
+
+
+def test_version_hash_changes_when_entries_change() -> None:
+    repo = ForbiddenListRepository(["Coumarin"])
+    before = repo.version_hash()
+
+    repo.replace(["Coumarin", "BHT"])
+
+    assert repo.version_hash() != before

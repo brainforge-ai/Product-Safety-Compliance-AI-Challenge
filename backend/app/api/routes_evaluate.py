@@ -13,12 +13,14 @@ from fastapi.concurrency import run_in_threadpool
 from app.api.deps import (
     get_evaluation_repository,
     get_forbidden_list_repository,
+    get_llm_matcher,
     get_match_pipeline,
     get_settings_dep,
 )
 from app.api.schemas.evaluate import BatchEvaluationResponse, BatchItemResult, EvaluateByPathRequest
 from app.core.config import Settings
 from app.domain.forbidden_list.repository import ForbiddenListRepository
+from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.models import EvaluationResult
 from app.domain.persistence.base import EvaluationRepository
@@ -83,10 +85,17 @@ async def evaluate(
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
+    llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
 ) -> EvaluationResult:
     with _staged_upload(file) as path:
         await _write_upload(file, path)
-        items = await evaluate_products_from_file(path, forbidden_repo.get_all(), pipeline)
+        items = await evaluate_products_from_file(
+            path,
+            forbidden_repo.get_all(),
+            pipeline,
+            llm_matcher=llm_matcher,
+            forbidden_list_version=forbidden_repo.version_hash(),
+        )
 
     item = _single_result(items, source=file.filename or "uploaded file")
     persist_evaluation(evaluation_repo, item)
@@ -99,6 +108,7 @@ async def evaluate_batch(
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
+    llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
 ) -> BatchEvaluationResponse:
     forbidden_list = forbidden_repo.get_all()
 
@@ -109,7 +119,13 @@ async def evaluate_batch(
             await _write_upload(upload, path)
             staged_paths.append(path)
 
-        outcomes = await evaluate_paths_concurrently(staged_paths, forbidden_list, pipeline)
+        outcomes = await evaluate_paths_concurrently(
+            staged_paths,
+            forbidden_list,
+            pipeline,
+            llm_matcher=llm_matcher,
+            forbidden_list_version=forbidden_repo.version_hash(),
+        )
 
         results = [
             _to_batch_items(upload.filename or "uploaded file", outcome, evaluation_repo)
@@ -126,12 +142,19 @@ async def evaluate_by_path(
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
+    llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
 ) -> EvaluationResult:
     resolved = _resolve_within(settings.sample_data_dir, body.path)
     if not resolved.is_file():
         raise HTTPException(status_code=404, detail=f"No such file: {body.path}")
 
-    items = await evaluate_products_from_file(resolved, forbidden_repo.get_all(), pipeline)
+    items = await evaluate_products_from_file(
+        resolved,
+        forbidden_repo.get_all(),
+        pipeline,
+        llm_matcher=llm_matcher,
+        forbidden_list_version=forbidden_repo.version_hash(),
+    )
 
     item = _single_result(items, source=body.path)
     persist_evaluation(evaluation_repo, item)
@@ -144,6 +167,7 @@ async def evaluate_batch_samples(
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
+    llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
 ) -> BatchEvaluationResponse:
     index_path = settings.sample_data_dir / "product_index.csv"
     if not index_path.is_file():
@@ -154,7 +178,13 @@ async def evaluate_batch_samples(
 
     forbidden_list = forbidden_repo.get_all()
     paths = [settings.sample_data_dir / row["filename"] for row in rows]
-    outcomes = await evaluate_paths_concurrently(paths, forbidden_list, pipeline)
+    outcomes = await evaluate_paths_concurrently(
+        paths,
+        forbidden_list,
+        pipeline,
+        llm_matcher=llm_matcher,
+        forbidden_list_version=forbidden_repo.version_hash(),
+    )
 
     results = [
         _to_batch_items(row["filename"], outcome, evaluation_repo, product_id=row.get("product_id"))

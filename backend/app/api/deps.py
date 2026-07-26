@@ -12,6 +12,7 @@ from fastapi import Request
 
 from app.core.config import Settings
 from app.domain.forbidden_list.repository import ForbiddenListRepository
+from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.persistence.base import EvaluationRepository
 from app.domain.persistence.noop_evaluation_repository import NoopEvaluationRepository
@@ -40,3 +41,7 @@ def get_forbidden_list_repository(request: Request) -> ForbiddenListRepository:
 
 def get_match_pipeline(request: Request) -> MatchPipeline:
     return request.app.state.match_pipeline
+
+
+def get_llm_matcher(request: Request) -> LlmMatcher | None:
+    return request.app.state.llm_matcher
