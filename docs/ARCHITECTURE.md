@@ -266,8 +266,7 @@ Response contract preserves the exact shape from the challenge README, with addi
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/evaluate` | Upload one file (multipart), returns evaluation JSON |
-| `POST /api/evaluate/batch` | Upload/reference multiple files, processed concurrently with bounded parallelism |
+| `POST /api/evaluate` | Upload one or more files (repeated `files` multipart field). Returns the single README-shaped evaluation JSON when the request resolves to exactly one product; otherwise returns the batch shape (multiple files, or a multi-row CSV), processed concurrently with bounded parallelism |
 | `POST /api/evaluate/by-path` | Evaluate a file already on disk (useful for `product_index.csv`-style batch runs) |
 | `POST /api/evaluate/batch-samples` | First-class endpoint that reads `product_index.csv` and evaluates every mapped product file in one call |
 | `GET /api/products` | Paginated evaluation history (only populated when `ENABLE_PERSISTENCE=true`) |

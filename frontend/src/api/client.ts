@@ -14,11 +14,19 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function evaluateFile(file: File): Promise<EvaluationResult> {
+// The backend's single /evaluate endpoint accepts one or more files under
+// the repeated "files" field, and returns a bare EvaluationResult when the
+// request resolves to exactly one product, or the batch shape otherwise
+// (see backend/app/api/routes_evaluate.py's evaluate() docstring).
+export async function evaluateFiles(
+  files: File[],
+): Promise<EvaluationResult | BatchEvaluationResponse> {
   const formData = new FormData()
-  formData.append('file', file)
+  for (const file of files) {
+    formData.append('files', file)
+  }
   const response = await fetch(`${API_BASE}/evaluate`, { method: 'POST', body: formData })
-  return handleResponse<EvaluationResult>(response)
+  return handleResponse<EvaluationResult | BatchEvaluationResponse>(response)
 }
 
 export async function evaluateBatchSamples(): Promise<BatchEvaluationResponse> {

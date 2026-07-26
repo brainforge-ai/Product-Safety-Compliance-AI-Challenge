@@ -15,7 +15,7 @@ def test_products_history_is_always_empty_when_persistence_disabled(
         with TestClient(create_app()) as client:
             path = fixtures_dir / "images" / "P-2025-0006_Pure_Lotion.png"
             with path.open("rb") as fh:
-                client.post("/api/evaluate", files={"file": (path.name, fh, "image/png")})
+                client.post("/api/evaluate", files={"files": (path.name, fh, "image/png")})
 
             response = client.get("/api/products")
             assert response.status_code == 200
@@ -35,7 +35,7 @@ def test_products_history_records_evaluations_when_persistence_enabled(
         with TestClient(create_app()) as client:
             path = fixtures_dir / "images" / "P-2025-0006_Pure_Lotion.png"
             with path.open("rb") as fh:
-                client.post("/api/evaluate", files={"file": (path.name, fh, "image/png")})
+                client.post("/api/evaluate", files={"files": (path.name, fh, "image/png")})
 
             response = client.get("/api/products")
             assert response.status_code == 200

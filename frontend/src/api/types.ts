@@ -30,6 +30,15 @@ export interface BatchEvaluationResponse {
   results: BatchItemResult[]
 }
 
+// /evaluate returns EvaluationResult | BatchEvaluationResponse depending on
+// whether the request resolved to exactly one product; the two shapes are
+// distinguishable by the presence of `results`.
+export function isBatchEvaluationResponse(
+  response: EvaluationResult | BatchEvaluationResponse,
+): response is BatchEvaluationResponse {
+  return 'results' in response
+}
+
 export interface ForbiddenListResponse {
   ingredients: string[]
 }

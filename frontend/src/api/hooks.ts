@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   evaluateBatchSamples,
-  evaluateFile,
+  evaluateFiles,
   getForbiddenIngredients,
   replaceForbiddenIngredients,
 } from './client'
 
 const FORBIDDEN_LIST_QUERY_KEY = ['forbidden-ingredients']
 
-export function useEvaluateFile() {
-  return useMutation({ mutationFn: evaluateFile })
+export function useEvaluateFiles() {
+  return useMutation({ mutationFn: evaluateFiles })
 }
 
 export function useEvaluateBatchSamples() {

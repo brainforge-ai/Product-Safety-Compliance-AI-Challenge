@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useEvaluateBatchSamples, useEvaluateFile } from '../api/hooks'
+import { useEvaluateBatchSamples, useEvaluateFiles } from '../api/hooks'
+import { isBatchEvaluationResponse } from '../api/types'
 import { fromBatchItem, fromSingleResult, type ResultRow } from '../lib/resultRow'
 
 interface EvaluatePageProps {
@@ -8,15 +9,18 @@ interface EvaluatePageProps {
 }
 
 export function EvaluatePage({ onResults, onNavigateToResults }: EvaluatePageProps) {
-  const [file, setFile] = useState<File | null>(null)
-  const evaluateFile = useEvaluateFile()
+  const [files, setFiles] = useState<File[]>([])
+  const evaluateFiles = useEvaluateFiles()
   const evaluateBatchSamples = useEvaluateBatchSamples()
 
   function handleEvaluate() {
-    if (!file) return
-    evaluateFile.mutate(file, {
-      onSuccess: (result) => {
-        onResults([fromSingleResult(file.name, result)])
+    if (files.length === 0) return
+    evaluateFiles.mutate(files, {
+      onSuccess: (response) => {
+        const rows = isBatchEvaluationResponse(response)
+          ? response.results.map(fromBatchItem)
+          : [fromSingleResult(files[0].name, response)]
+        onResults(rows)
         onNavigateToResults()
       },
     })
@@ -34,30 +38,36 @@ export function EvaluatePage({ onResults, onNavigateToResults }: EvaluatePagePro
   return (
     <div className="space-y-8">
       <section className="rounded-lg border border-neutral-200 p-6 dark:border-neutral-800">
-        <h2 className="mb-1 text-lg font-medium">Evaluate a single product file</h2>
+        <h2 className="mb-1 text-lg font-medium">Evaluate product files</h2>
         <p className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
-          Upload a PDF, image, text, or single-row CSV file describing one product.
+          Upload a PDF, image, text, or CSV file describing one product -- or select more than
+          one file to evaluate them together as a batch.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <input
-            key={file ? file.name : 'empty'}
+            key={files.length === 0 ? 'empty' : files.map((f) => f.name).join(',')}
             type="file"
+            multiple
             accept=".pdf,.png,.jpg,.jpeg,.txt,.csv"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
             className="text-sm text-neutral-600 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-neutral-700 dark:text-neutral-400 dark:file:bg-neutral-100 dark:file:text-neutral-900"
           />
           <button
             type="button"
             onClick={handleEvaluate}
-            disabled={!file || evaluateFile.isPending}
+            disabled={files.length === 0 || evaluateFiles.isPending}
             className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
           >
-            {evaluateFile.isPending ? 'Evaluating…' : 'Evaluate'}
+            {evaluateFiles.isPending
+              ? 'Evaluating…'
+              : files.length > 1
+                ? `Evaluate ${files.length} files`
+                : 'Evaluate'}
           </button>
         </div>
-        {evaluateFile.isError && (
+        {evaluateFiles.isError && (
           <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-            {(evaluateFile.error as Error).message}
+            {(evaluateFiles.error as Error).message}
           </p>
         )}
       </section>

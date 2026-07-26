@@ -48,7 +48,7 @@ def test_llm_tier_catches_a_naming_variant_that_tiers_1_5_miss() -> None:
         csv_body = b"Product Name,Ingredients\nSynthetic Serum,Water;D-Glucopyranose\n"
 
         response = client.post(
-            "/api/evaluate", files={"file": ("product.csv", csv_body, "text/csv")}
+            "/api/evaluate", files={"files": ("product.csv", csv_body, "text/csv")}
         )
 
         assert response.status_code == 200
@@ -67,7 +67,7 @@ def test_llm_tier_does_not_run_when_nothing_is_unresolved() -> None:
         csv_body = b"Product Name,Ingredients\nSynthetic Serum,Water\n"
 
         response = client.post(
-            "/api/evaluate", files={"file": ("product.csv", csv_body, "text/csv")}
+            "/api/evaluate", files={"files": ("product.csv", csv_body, "text/csv")}
         )
 
         assert response.status_code == 200
@@ -86,7 +86,7 @@ def test_no_llm_matcher_configured_leaves_naming_variant_unresolved() -> None:
         csv_body = b"Product Name,Ingredients\nSynthetic Serum,Water;D-Glucopyranose\n"
 
         response = client.post(
-            "/api/evaluate", files={"file": ("product.csv", csv_body, "text/csv")}
+            "/api/evaluate", files={"files": ("product.csv", csv_body, "text/csv")}
         )
 
         assert response.status_code == 200

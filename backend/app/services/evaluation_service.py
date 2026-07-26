@@ -65,8 +65,8 @@ async def evaluate_products_from_file(
     Almost always a single-item list (pdf/image/text files each describe one
     product). A CSV file is the exception: `CsvExtractor` yields one row per
     product, so a multi-row CSV legitimately produces multiple results — the
-    `/evaluate` route (which returns a single README-shaped object) rejects
-    that case and points callers at `/evaluate/batch` instead.
+    `/evaluate` route falls back to its batch response shape whenever this
+    returns more than one item.
 
     When `llm_matcher` is provided (tier 6 is enabled), every product's
     still-unresolved ingredients after tiers 1-5 are batched into one LLM

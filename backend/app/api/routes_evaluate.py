@@ -73,63 +73,69 @@ def _single_result(
             status_code=400,
             detail=(
                 f"{source} contains {len(items)} product rows; "
-                "/evaluate only supports a single product. Use /evaluate/batch for multi-row CSVs."
+                "/evaluate/by-path only supports a single product."
             ),
         )
     return items[0]
 
 
-@router.post("/evaluate", response_model=EvaluationResult)
+@router.post("/evaluate", response_model=EvaluationResult | BatchEvaluationResponse)
 async def evaluate(
-    file: UploadFile,
-    forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
-    pipeline: MatchPipeline = Depends(get_match_pipeline),
-    evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
-    llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
-) -> EvaluationResult:
-    with _staged_upload(file) as path:
-        await _write_upload(file, path)
-        items = await evaluate_products_from_file(
-            path,
-            forbidden_repo.get_all(),
-            pipeline,
-            llm_matcher=llm_matcher,
-            forbidden_list_version=forbidden_repo.version_hash(),
-        )
-
-    item = _single_result(items, source=file.filename or "uploaded file")
-    persist_evaluation(evaluation_repo, item)
-    return item.result
-
-
-@router.post("/evaluate/batch", response_model=BatchEvaluationResponse)
-async def evaluate_batch(
     files: list[UploadFile],
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
-) -> BatchEvaluationResponse:
+) -> EvaluationResult | BatchEvaluationResponse:
+    """Evaluate one or more uploaded product files.
+
+    A request that resolves to exactly one product overall (one file, that
+    itself yields exactly one product row) returns the single README-shaped
+    `EvaluationResult`. Anything else -- more than one uploaded file, or a
+    single CSV file whose rows expand to more than one product -- returns
+    the batch shape instead, since the single-object contract has no room
+    for more than one product. This intentionally makes the response shape
+    depend on the request, trading strict per-route typing for one endpoint
+    that covers both the single-product README contract and multi-file
+    upload (see docs/HURDLES.md for the full rationale).
+    """
     forbidden_list = forbidden_repo.get_all()
+    forbidden_list_version = forbidden_repo.version_hash()
 
     with ExitStack() as stack:
-        staged_paths = []
+        staged: list[tuple[str, Path]] = []
         for upload in files:
             path = stack.enter_context(_staged_upload(upload))
             await _write_upload(upload, path)
-            staged_paths.append(path)
+            staged.append((upload.filename or "uploaded file", path))
+
+        if len(staged) == 1:
+            filename, path = staged[0]
+            items = await evaluate_products_from_file(
+                path,
+                forbidden_list,
+                pipeline,
+                llm_matcher=llm_matcher,
+                forbidden_list_version=forbidden_list_version,
+            )
+            if len(items) == 1:
+                persist_evaluation(evaluation_repo, items[0])
+                return items[0].result
+            return BatchEvaluationResponse(
+                results=_to_batch_items(filename, items, evaluation_repo)
+            )
 
         outcomes = await evaluate_paths_concurrently(
-            staged_paths,
+            [path for _, path in staged],
             forbidden_list,
             pipeline,
             llm_matcher=llm_matcher,
-            forbidden_list_version=forbidden_repo.version_hash(),
+            forbidden_list_version=forbidden_list_version,
         )
 
         results = [
-            _to_batch_items(upload.filename or "uploaded file", outcome, evaluation_repo)
-            for upload, outcome in zip(files, outcomes, strict=True)
+            _to_batch_items(filename, outcome, evaluation_repo)
+            for (filename, _), outcome in zip(staged, outcomes, strict=True)
         ]
 
     return BatchEvaluationResponse(results=[item for group in results for item in group])
