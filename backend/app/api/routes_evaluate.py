@@ -13,6 +13,7 @@ from fastapi.concurrency import run_in_threadpool
 from app.api.deps import (
     get_evaluation_repository,
     get_forbidden_list_repository,
+    get_llm_extraction_fallback,
     get_llm_matcher,
     get_match_pipeline,
     get_settings_dep,
@@ -23,6 +24,7 @@ from app.domain.forbidden_list.repository import ForbiddenListRepository
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.models import EvaluationResult
+from app.domain.parsing.llm_fallback import LlmFallbackExtractor
 from app.domain.persistence.base import EvaluationRepository
 from app.services.evaluation_service import (
     ProductEvaluation,
@@ -86,6 +88,7 @@ async def evaluate(
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
+    extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> EvaluationResult | BatchEvaluationResponse:
     """Evaluate one or more uploaded product files.
 
@@ -116,6 +119,7 @@ async def evaluate(
                 forbidden_list,
                 pipeline,
                 llm_matcher=llm_matcher,
+                extraction_fallback=extraction_fallback,
                 forbidden_list_version=forbidden_list_version,
             )
             if len(items) == 1:
@@ -130,6 +134,7 @@ async def evaluate(
             forbidden_list,
             pipeline,
             llm_matcher=llm_matcher,
+            extraction_fallback=extraction_fallback,
             forbidden_list_version=forbidden_list_version,
         )
 
@@ -149,6 +154,7 @@ async def evaluate_by_path(
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
+    extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> EvaluationResult:
     resolved = _resolve_within(settings.sample_data_dir, body.path)
     if not resolved.is_file():
@@ -159,6 +165,7 @@ async def evaluate_by_path(
         forbidden_repo.get_all(),
         pipeline,
         llm_matcher=llm_matcher,
+        extraction_fallback=extraction_fallback,
         forbidden_list_version=forbidden_repo.version_hash(),
     )
 
@@ -174,6 +181,7 @@ async def evaluate_batch_samples(
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
+    extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> BatchEvaluationResponse:
     index_path = settings.sample_data_dir / "product_index.csv"
     if not index_path.is_file():
@@ -189,6 +197,7 @@ async def evaluate_batch_samples(
         forbidden_list,
         pipeline,
         llm_matcher=llm_matcher,
+        extraction_fallback=extraction_fallback,
         forbidden_list_version=forbidden_repo.version_hash(),
     )
 

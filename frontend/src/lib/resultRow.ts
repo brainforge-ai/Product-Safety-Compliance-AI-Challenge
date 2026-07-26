@@ -1,4 +1,4 @@
-import type { BatchItemResult, EvaluationResult, MatchResult } from '../api/types'
+import type { BatchItemResult, EvaluationResult, LlmUsage, MatchResult } from '../api/types'
 
 // A single row for the Results table, unifying the two shapes the backend
 // returns (a bare EvaluationResult from /evaluate, a BatchItemResult -- which
@@ -11,6 +11,7 @@ export interface ResultRow {
   status: 'Accepted' | 'Rejected' | 'Error'
   reason: string[]
   matches: MatchResult[]
+  llmUsage?: LlmUsage | null
   error?: string | null
 }
 
@@ -28,6 +29,7 @@ export function fromSingleResult(source: string, result: EvaluationResult): Resu
     status: result.status,
     reason: result.reason,
     matches: result.matches,
+    llmUsage: result.llm_usage,
   }
 }
 
@@ -51,5 +53,6 @@ export function fromBatchItem(item: BatchItemResult): ResultRow {
     status: item.result.status,
     reason: item.result.reason,
     matches: item.result.matches,
+    llmUsage: item.result.llm_usage,
   }
 }

@@ -50,16 +50,35 @@ class ExtractedProduct(BaseModel):
     needs_llm_fallback: bool = False
 
 
+class LlmUsage(BaseModel):
+    """Token usage and, if `genai-prices` has rate data for the model,
+    estimated USD cost for the Gemini calls made while producing one
+    evaluation. Aggregated across tier 6 matching and the LLM extraction
+    fallback, whichever ran -- a Gemini call is batched per-product, so cost
+    isn't attributable to any single match. The cost fields are None when
+    pricing data isn't available for the configured model, rather than a
+    guessed number.
+    """
+
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    input_cost_usd: float | None = None
+    output_cost_usd: float | None = None
+    estimated_cost_usd: float | None = None
+
+
 class EvaluationResult(BaseModel):
     """The final Accept/Reject decision for a product, matching the challenge README's
-    response contract (product_name, status, reason), with an additive `matches` field
-    for transparency (ARCHITECTURE.md Section 10).
+    response contract (product_name, status, reason), with additive `matches` and
+    `llm_usage` fields for transparency (ARCHITECTURE.md Section 10).
     """
 
     product_name: str
     status: Literal["Accepted", "Rejected"]
     reason: list[str] = Field(default_factory=list)
     matches: list[MatchResult] = Field(default_factory=list)
+    llm_usage: LlmUsage | None = None
 
 
 class StoredEvaluation(BaseModel):

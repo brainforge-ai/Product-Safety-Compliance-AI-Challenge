@@ -4,12 +4,40 @@ decision, matching the challenge README's response contract
 """
 
 from app.domain.matching.pipeline import MatchPipeline
-from app.domain.models import EvaluationResult, ExtractedProduct, MatchResult
+from app.domain.models import EvaluationResult, ExtractedProduct, LlmUsage, MatchResult
 
 
-def _build_result(product_name: str, matches: list[MatchResult]) -> EvaluationResult:
+def _combine_usage(a: LlmUsage | None, b: LlmUsage | None) -> LlmUsage | None:
+    """Sum token usage/cost across two LLM calls for the same product (e.g.
+    the extraction fallback and tier 6 matching, if both ran). Missing cost
+    on one side is treated as 0 rather than making the total None, so a
+    partial pricing lookup failure doesn't hide the other call's real cost.
+    """
+    if a is None:
+        return b
+    if b is None:
+        return a
+
+    def _sum(x: float | None, y: float | None) -> float | None:
+        if x is None and y is None:
+            return None
+        return (x or 0.0) + (y or 0.0)
+
+    return LlmUsage(
+        input_tokens=a.input_tokens + b.input_tokens,
+        output_tokens=a.output_tokens + b.output_tokens,
+        total_tokens=a.total_tokens + b.total_tokens,
+        input_cost_usd=_sum(a.input_cost_usd, b.input_cost_usd),
+        output_cost_usd=_sum(a.output_cost_usd, b.output_cost_usd),
+        estimated_cost_usd=_sum(a.estimated_cost_usd, b.estimated_cost_usd),
+    )
+
+
+def _build_result(
+    product_name: str, matches: list[MatchResult], llm_usage: LlmUsage | None = None
+) -> EvaluationResult:
     if not matches:
-        return EvaluationResult(product_name=product_name, status="Accepted")
+        return EvaluationResult(product_name=product_name, status="Accepted", llm_usage=llm_usage)
 
     seen_reasons: set[str] = set()
     reasons = []
@@ -24,6 +52,7 @@ def _build_result(product_name: str, matches: list[MatchResult]) -> EvaluationRe
         status="Rejected",
         reason=reasons,
         matches=matches,
+        llm_usage=llm_usage,
     )
 
 
@@ -49,11 +78,22 @@ def unresolved_ingredients(product: ExtractedProduct, result: EvaluationResult) 
     return [ingredient for ingredient in product.ingredients if ingredient not in matched_texts]
 
 
-def merge_llm_matches(result: EvaluationResult, llm_matches: list[MatchResult]) -> EvaluationResult:
-    """Fold tier 6's additional matches into an already-decided result,
-    rebuilding the Accept/Reject status and `reason` list the same way
-    `decide` does. A no-op if the LLM tier found nothing.
+def merge_llm_matches(
+    result: EvaluationResult,
+    llm_matches: list[MatchResult],
+    usage: LlmUsage | None = None,
+) -> EvaluationResult:
+    """Fold an LLM call's additional matches (if any) and usage/cost (if any)
+    into an already-decided result, rebuilding the Accept/Reject status and
+    `reason` list the same way `decide` does. Called for both the extraction
+    fallback (llm_matches always `[]`, since it only recovers ingredients,
+    not matches) and tier 6 matching -- `usage` accumulates across both if a
+    product goes through them in sequence. A true no-op only when there is
+    neither a new match nor new usage to record.
     """
+    combined_usage = _combine_usage(result.llm_usage, usage)
     if not llm_matches:
-        return result
-    return _build_result(result.product_name, result.matches + llm_matches)
+        if combined_usage is result.llm_usage:
+            return result
+        return result.model_copy(update={"llm_usage": combined_usage})
+    return _build_result(result.product_name, result.matches + llm_matches, combined_usage)

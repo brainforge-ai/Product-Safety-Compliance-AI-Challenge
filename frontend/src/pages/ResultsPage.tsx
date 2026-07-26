@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { StatusBadge } from '../components/StatusBadge'
 import { MatchList } from '../components/MatchList'
+import { LlmUsageSummary } from '../components/LlmUsageSummary'
 import type { ResultRow } from '../lib/resultRow'
 
 export function ResultsPage({ results }: { results: ResultRow[] }) {
@@ -39,7 +40,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
         <tbody>
           {results.map((row) => {
             const isOpen = expanded.has(row.key)
-            const canExpand = row.matches.length > 0
+            const canExpand = row.matches.length > 0 || !!row.llmUsage
             return (
               <Fragment key={row.key}>
                 <tr
@@ -60,17 +61,19 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                   <td className="px-4 py-3 align-top">
                     {row.status === 'Error' ? (
                       <span className="text-red-600 dark:text-red-400">{row.error}</span>
-                    ) : row.reason.length > 0 ? (
+                    ) : (
                       <span>
-                        {row.reason.join(', ')}
+                        {row.reason.length > 0 ? (
+                          row.reason.join(', ')
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
                         {canExpand && (
                           <span className="ml-2 text-xs text-neutral-400">
-                            {isOpen ? '▲ hide matches' : '▼ show matches'}
+                            {isOpen ? '▲ hide details' : '▼ show details'}
                           </span>
                         )}
                       </span>
-                    ) : (
-                      <span className="text-neutral-400">—</span>
                     )}
                   </td>
                 </tr>
@@ -78,6 +81,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                   <tr className="border-b border-neutral-100 bg-neutral-50/60 dark:border-neutral-900 dark:bg-neutral-900/40">
                     <td colSpan={3} className="px-4 py-3">
                       <MatchList matches={row.matches} />
+                      {row.llmUsage && <LlmUsageSummary usage={row.llmUsage} />}
                     </td>
                   </tr>
                 )}

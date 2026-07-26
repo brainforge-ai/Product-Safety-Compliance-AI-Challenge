@@ -22,9 +22,9 @@ from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
 from app.core.config import Settings
-from app.infra.llm.base import LlmMatchResponse
-
-_GOOGLE_PREFIX = "google:"
+from app.infra.llm.base import LlmClientResult, LlmMatchResponse
+from app.infra.llm.model_naming import strip_provider_prefix
+from app.infra.llm.usage import usage_from_run
 
 _SYSTEM_PROMPT = (
     "You are a chemical ingredient safety compliance assistant. Given a list "
@@ -41,12 +41,6 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _strip_provider_prefix(model_name: str) -> str:
-    if model_name.startswith(_GOOGLE_PREFIX):
-        return model_name[len(_GOOGLE_PREFIX) :]
-    return model_name
-
-
 def _build_prompt(ingredients: list[str], forbidden_list: list[str]) -> str:
     ingredients_block = "\n".join(f"- {i}" for i in ingredients)
     forbidden_block = "\n".join(f"- {f}" for f in forbidden_list)
@@ -60,12 +54,16 @@ def _build_prompt(ingredients: list[str], forbidden_list: list[str]) -> str:
 
 class PydanticAiLlmClient:
     def __init__(self, settings: Settings) -> None:
+        self._model_ref = strip_provider_prefix(settings.llm_model)
         provider = GoogleProvider(api_key=settings.google_api_key)
-        model = GoogleModel(_strip_provider_prefix(settings.llm_model), provider=provider)
+        model = GoogleModel(self._model_ref, provider=provider)
         self._agent = Agent(model, output_type=LlmMatchResponse, system_prompt=_SYSTEM_PROMPT)
 
     async def match_ingredients(
         self, ingredients: list[str], forbidden_list: list[str]
-    ) -> LlmMatchResponse:
+    ) -> LlmClientResult:
         result = await self._agent.run(_build_prompt(ingredients, forbidden_list))
-        return result.output
+        return LlmClientResult(
+            matches=result.output.matches,
+            usage=usage_from_run(result.usage, self._model_ref),
+        )

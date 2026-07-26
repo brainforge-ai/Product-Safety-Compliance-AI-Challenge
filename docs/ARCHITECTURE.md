@@ -176,6 +176,12 @@ GOOGLE_API_KEY=...
 
 `LLM_MODEL` is never hardcoded into application logic, always read from settings, so switching models/providers later is a config change only.
 
+`ENABLE_LLM_MATCHING`/`GOOGLE_API_KEY` gate a second Gemini caller too: the LLM extraction fallback (`domain/parsing/llm_fallback.py`, concrete adapter `infra/llm/pydantic_ai_extraction_fallback.py`), used when the regex/heuristic parser finds no ingredients section at all (`ExtractedProduct.needs_llm_fallback`). It shares tier 6's flag rather than a second one -- both are "is Gemini configured," and the zero-config default already means neither runs without a real key.
+
+### Token usage and cost
+
+Every Gemini call (tier 6 matching and the extraction fallback) returns its token usage as an `LlmUsage` (input/output/total tokens, plus estimated USD cost) attached to `EvaluationResult.llm_usage` -- see Section 10. Usage is built by the concrete adapter *after* `Agent.run()` returns (from `AgentRunResult.usage`, a plain attribute, not part of `output_type`), never asked of the model itself. Cost is computed via `genai_prices.calc_price` (a `pydantic-ai` dependency with a maintained per-model pricing database); if a model has no pricing data, cost fields are `None` rather than a guessed number. A cache hit reports no usage (nothing was actually spent); when a product goes through both the extraction fallback and tier 6, their usage is summed into one `llm_usage`.
+
 ### Tier 6 request flow
 
 ```mermaid
@@ -260,9 +266,12 @@ Response contract preserves the exact shape from the challenge README, with addi
   "reason": ["Contains Coumarin", "Contains Propylparaben"],
   "matches": [
     {"forbidden_ingredient": "Coumarin", "matched_text": "Coumarin", "method": "exact", "confidence": 1.0}
-  ]
+  ],
+  "llm_usage": null
 }
 ```
+
+`llm_usage` is a second additive field (alongside `matches`), populated only when tier 6 matching and/or the LLM extraction fallback actually called Gemini for this product -- see Section 7.
 
 | Endpoint | Purpose |
 |---|---|

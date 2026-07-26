@@ -10,3 +10,6 @@
 # default requirements.txt so the base app/Docker image stays lean.
 sentence-transformers>=3.0.0
 pydantic-ai>=1.0.0
+# Pulled in transitively by pydantic-ai already; pinned explicitly since
+# app/infra/llm/usage.py imports it directly for token-usage cost lookups.
+genai-prices>=0.0.70

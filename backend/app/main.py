@@ -26,6 +26,7 @@ from app.domain.matching.formula_matcher import FormulaMatcher
 from app.domain.matching.fuzzy_matcher import FuzzyMatcher
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
+from app.domain.parsing.llm_fallback import LlmFallbackExtractor
 from app.infra.db.session import create_db_and_tables, create_db_engine
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,24 @@ def _build_llm_matcher(settings: Settings) -> LlmMatcher | None:
     )
 
 
+def _build_llm_extraction_fallback(settings: Settings) -> LlmFallbackExtractor | None:
+    # Shares the ENABLE_LLM_MATCHING/GOOGLE_API_KEY toggle with tier 6 rather
+    # than adding a second flag: both features are "is Gemini configured",
+    # and the zero-config default (ARCHITECTURE.md Section 3) already means
+    # neither runs unless a real key is supplied.
+    if not settings.enable_llm_matching:
+        return None
+    if not settings.google_api_key:
+        return None
+
+    from app.infra.llm.pydantic_ai_extraction_fallback import PydanticAiExtractionFallback
+
+    return LlmFallbackExtractor(
+        PydanticAiExtractionFallback(settings),
+        timeout_seconds=settings.llm_timeout_seconds,
+    )
+
+
 def _load_default_forbidden_list(settings: Settings) -> ForbiddenListRepository:
     path = settings.default_forbidden_list_path
     if not path.is_file():
@@ -96,6 +115,7 @@ async def lifespan(app: FastAPI):
     app.state.forbidden_list_repository = _load_default_forbidden_list(settings)
     app.state.match_pipeline = _default_match_pipeline(settings)
     app.state.llm_matcher = _build_llm_matcher(settings)
+    app.state.llm_extraction_fallback = _build_llm_extraction_fallback(settings)
 
     yield
 

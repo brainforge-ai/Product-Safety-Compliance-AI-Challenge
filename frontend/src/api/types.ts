@@ -11,11 +11,25 @@ export interface MatchResult {
   confidence: number
 }
 
+// Token usage/cost for the Gemini calls made while producing one
+// evaluation (tier 6 matching and/or the LLM extraction fallback). The cost
+// fields are null when pricing data wasn't available for the model, rather
+// than a guessed number -- see backend app/infra/llm/usage.py.
+export interface LlmUsage {
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  input_cost_usd: number | null
+  output_cost_usd: number | null
+  estimated_cost_usd: number | null
+}
+
 export interface EvaluationResult {
   product_name: string
   status: 'Accepted' | 'Rejected'
   reason: string[]
   matches: MatchResult[]
+  llm_usage: LlmUsage | null
 }
 
 export interface BatchItemResult {

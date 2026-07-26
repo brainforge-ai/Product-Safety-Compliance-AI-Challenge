@@ -12,16 +12,16 @@ from fastapi.testclient import TestClient
 
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.infra.cache.llm_response_cache import LlmResponseCache
-from app.infra.llm.base import LlmIngredientMatch, LlmMatchResponse
+from app.infra.llm.base import LlmClientResult, LlmIngredientMatch
 from app.main import create_app
 
 
 class _FakeLlmClient:
     async def match_ingredients(
         self, ingredients: list[str], forbidden_list: list[str]
-    ) -> LlmMatchResponse:
+    ) -> LlmClientResult:
         if "D-Glucopyranose" in ingredients and "Glucose" in forbidden_list:
-            return LlmMatchResponse(
+            return LlmClientResult(
                 matches=[
                     LlmIngredientMatch(
                         ingredient="D-Glucopyranose",
@@ -31,7 +31,7 @@ class _FakeLlmClient:
                     )
                 ]
             )
-        return LlmMatchResponse()
+        return LlmClientResult()
 
 
 def _client_with_llm_matcher() -> TestClient:
@@ -81,7 +81,12 @@ def test_no_llm_matcher_configured_leaves_naming_variant_unresolved() -> None:
     # Baseline: without tier 6 wired in (the default -- ENABLE_LLM_MATCHING
     # is false), the same naming-convention variant is NOT caught. This is
     # the documented gap tiers 1-5 cannot close (see embedding_matcher.py).
+    # `llm_matcher` is set to None explicitly rather than relying on ambient
+    # `.env` state (ENABLE_LLM_MATCHING defaulting to false) -- a local .env
+    # with the flag flipped on for live testing must never make this
+    # baseline silently spend real Gemini credits.
     with TestClient(create_app()) as client:
+        client.app.state.llm_matcher = None
         client.app.state.forbidden_list_repository.replace(["Glucose"])
         csv_body = b"Product Name,Ingredients\nSynthetic Serum,Water;D-Glucopyranose\n"
 

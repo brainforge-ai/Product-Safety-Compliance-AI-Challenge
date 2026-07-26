@@ -23,8 +23,9 @@ from app.domain.extraction.pdf_extractor import PdfExtractor
 from app.domain.extraction.text_extractor import TextExtractor
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
-from app.domain.models import EvaluationResult, ExtractedProduct
+from app.domain.models import EvaluationResult, ExtractedProduct, LlmUsage
 from app.domain.parsing.csv_product_parser import parse_csv_row
+from app.domain.parsing.llm_fallback import LlmFallbackExtractor
 from app.domain.parsing.product_parser import parse_product_text
 from app.domain.persistence.base import EvaluationRepository
 
@@ -37,6 +38,14 @@ _EXTRACTORS = {
 }
 
 DEFAULT_BATCH_CONCURRENCY = 8
+
+
+def _csv_row_as_text(row: dict[str, str]) -> str:
+    """Render a CSV row as a text blob, for feeding to the same LLM
+    extraction fallback used for pdf/image/text files, when a row is missing
+    an ingredients column.
+    """
+    return "\n".join(f"{key}: {value}" for key, value in row.items())
 
 
 @dataclass
@@ -58,6 +67,7 @@ async def evaluate_products_from_file(
     pipeline: MatchPipeline,
     *,
     llm_matcher: LlmMatcher | None = None,
+    extraction_fallback: LlmFallbackExtractor | None = None,
     forbidden_list_version: str = "",
 ) -> list[ProductEvaluation]:
     """Evaluate every product found in one file.
@@ -67,6 +77,12 @@ async def evaluate_products_from_file(
     product, so a multi-row CSV legitimately produces multiple results — the
     `/evaluate` route falls back to its batch response shape whenever this
     returns more than one item.
+
+    When `extraction_fallback` is provided, any product the regex/heuristic
+    parser flagged with `needs_llm_fallback=True` (no ingredients section
+    found) is retried through the LLM before matching runs, so a file with
+    unusual formatting still gets a real Accept/Reject decision instead of
+    an empty ingredient list — see `domain/parsing/llm_fallback.py`.
 
     When `llm_matcher` is provided (tier 6 is enabled), every product's
     still-unresolved ingredients after tiers 1-5 are batched into one LLM
@@ -79,13 +95,30 @@ async def evaluate_products_from_file(
     if file_type == FileType.CSV:
         rows = await run_in_threadpool(CsvExtractor().extract, path)
         products = [parse_csv_row(row) for row in rows]
+        raw_texts = [_csv_row_as_text(row) for row in rows]
     else:
         raw_text = await run_in_threadpool(_EXTRACTORS[file_type].extract, path)
         products = [parse_product_text(raw_text)]
+        raw_texts = [raw_text]
+
+    extraction_usages: list[LlmUsage | None] = [None] * len(products)
+    if extraction_fallback is not None:
+        updated_products: list[ExtractedProduct] = []
+        for index, (product, text) in enumerate(zip(products, raw_texts, strict=True)):
+            if not product.needs_llm_fallback:
+                updated_products.append(product)
+                continue
+            outcome = await extraction_fallback.extract(text, product)
+            updated_products.append(outcome.product)
+            extraction_usages[index] = outcome.usage
+        products = updated_products
 
     evaluations = [
-        ProductEvaluation(product=product, result=decide(product, forbidden_list, pipeline))
-        for product in products
+        ProductEvaluation(
+            product=product,
+            result=merge_llm_matches(decide(product, forbidden_list, pipeline), [], usage),
+        )
+        for product, usage in zip(products, extraction_usages, strict=True)
     ]
 
     if llm_matcher is None:
@@ -93,7 +126,7 @@ async def evaluate_products_from_file(
 
     resolved: list[ProductEvaluation] = []
     for item in evaluations:
-        llm_matches = await llm_matcher.match_unresolved(
+        outcome = await llm_matcher.match_unresolved(
             unresolved_ingredients(item.product, item.result),
             forbidden_list,
             forbidden_list_version,
@@ -101,7 +134,7 @@ async def evaluate_products_from_file(
         resolved.append(
             ProductEvaluation(
                 product=item.product,
-                result=merge_llm_matches(item.result, llm_matches),
+                result=merge_llm_matches(item.result, outcome.matches, outcome.usage),
             )
         )
     return resolved
@@ -123,6 +156,7 @@ async def evaluate_paths_concurrently(
     *,
     concurrency: int = DEFAULT_BATCH_CONCURRENCY,
     llm_matcher: LlmMatcher | None = None,
+    extraction_fallback: LlmFallbackExtractor | None = None,
     forbidden_list_version: str = "",
 ) -> list[list[ProductEvaluation] | Exception]:
     """Evaluate many files concurrently, bounded by a semaphore.
@@ -141,6 +175,7 @@ async def evaluate_paths_concurrently(
                     forbidden_list,
                     pipeline,
                     llm_matcher=llm_matcher,
+                    extraction_fallback=extraction_fallback,
                     forbidden_list_version=forbidden_list_version,
                 )
             except AppError as exc:
