@@ -271,7 +271,7 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 ## Phase 9: Frontend Application
 
-**Status:** Not started
+**Status:** Done
 
 **Goal:** A lean React UI covering evaluate, results, and forbidden-list management.
 
@@ -283,10 +283,14 @@ This plan breaks the build described in `docs/ARCHITECTURE.md` into small, indep
 
 **Technical notes:**
 - Given the project's time budget, a single-page app with tab-based navigation between the three views is preferred over a full multi-route setup, per the open question resolved informally in `ARCHITECTURE.md`.
+- Scaffolded with the current Vite React-TS template, which ships **Oxlint** (not ESLint) and **Tailwind CSS v4** conventions: the v4 `@tailwindcss/vite` plugin needs no `tailwind.config.js` or PostCSS setup, just `@import "tailwindcss";` in `index.css` (confirmed current via Context7 against `tailwindcss.com/docs/installation/using-vite`, since the training-data version of this setup is out of date).
+- **No CORS middleware added to the backend.** `vite.config.ts` proxies `/api` to `http://localhost:8000` in dev, so browser requests are same-origin and the backend needs no changes for the frontend to work — deliberately avoids growing `main.py`'s scope for a dev-only concern.
+- The "Results" view's data isn't a persisted server resource (unlike the forbidden list); it's the client-side list of everything evaluated so far this session, lifted into `App.tsx` state and populated by both the single-evaluate and run-all-samples actions. A hand-written `ResultRow` type in `lib/resultRow.ts` unifies the two different shapes `/evaluate` and `/evaluate/batch-samples` return (a bare `EvaluationResult` vs. a `BatchItemResult` that can itself be a per-file error) into one shape the table renders without caring which endpoint produced it.
+- API types in `frontend/src/api/types.ts` are hand-written to mirror the backend's Pydantic schemas; there's no OpenAPI codegen step, so these need manual updates if the backend contract changes.
 
 **Verification:**
-- `npm run build` succeeds; `npm run lint` passes.
-- Manual click-through against a running backend: evaluate a couple of individual sample files, run the batch-samples flow, and upload a replacement forbidden list, confirming the UI reflects each result correctly.
+- `npm run build` succeeds; `npm run lint` (Oxlint) passes.
+- Manual click-through against a running backend, via a real browser (kimi-webbridge), not just curl: loaded the app, clicked "Run all samples" (30 real sample products, all four rule-based tiers), confirmed it navigated to the Results tab with a "30" badge and a full table of status badges; expanded a Rejected row (P-2025-0006) and confirmed it showed the matched ingredient, forbidden ingredient, method (`EXACT`), and confidence; switched to the Forbidden List tab and confirmed it rendered the real 13-entry list from `forbidden_ingredients.csv`. All three tabs and both API-backed flows verified visually with real data, not mocked.
 
 **Commit:** `feat: add React frontend for evaluate, results, and forbidden-list management`
 
