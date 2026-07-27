@@ -12,11 +12,11 @@ from fastapi.testclient import TestClient
 
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.infra.cache.llm_response_cache import LlmResponseCache
-from app.infra.llm.base import LlmClientResult, LlmIngredientMatch
+from app.infra.llm.base import LLMClient, LlmClientResult, LlmIngredientMatch
 from app.main import create_app
 
 
-class _FakeLlmClient:
+class _FakeLlmClient(LLMClient):
     async def match_ingredients(
         self, ingredients: list[str], forbidden_list: list[str]
     ) -> LlmClientResult:

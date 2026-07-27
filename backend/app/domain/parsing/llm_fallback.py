@@ -2,8 +2,8 @@
 
 import asyncio
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Protocol
 
 from app.domain.models import ExtractedProduct, LlmUsage
 
@@ -18,8 +18,10 @@ class LlmExtractionOutcome:
     usage: LlmUsage | None = None
 
 
-class LlmExtractionFallback(Protocol):
-    async def extract(self, raw_text: str) -> LlmExtractionOutcome: ...
+class LlmExtractionFallback(ABC):
+    @abstractmethod
+    async def extract(self, raw_text: str) -> LlmExtractionOutcome:
+        """Extract structured product fields from unstructured label text."""
 
 
 class LlmFallbackExtractor:

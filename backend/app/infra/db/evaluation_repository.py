@@ -5,10 +5,11 @@ import json
 from sqlmodel import Session, select
 
 from app.domain.models import EvaluationResult, MatchResult, StoredEvaluation
+from app.domain.persistence.base import EvaluationRepository
 from app.infra.db.models import EvaluationRecord, ForbiddenListVersion
 
 
-class SqliteEvaluationRepository:
+class SqliteEvaluationRepository(EvaluationRepository):
     def __init__(self, session: Session) -> None:
         """Persist evaluations and forbidden-list versions in SQLite."""
         self._session = session

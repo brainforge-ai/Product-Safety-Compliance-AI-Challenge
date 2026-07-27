@@ -63,7 +63,7 @@ pytestmark = pytest.mark.skipif(
 
 def _build_pipeline_with_embeddings() -> MatchPipeline:
     from app.domain.matching.embedding_matcher import EmbeddingMatcher
-    from app.infra.embeddings.sentence_transformer_encoder import encode
+    from app.infra.embeddings.sentence_transformer_encoder import SentenceTransformerEncoder
 
     return MatchPipeline(
         [
@@ -71,7 +71,7 @@ def _build_pipeline_with_embeddings() -> MatchPipeline:
             FormulaMatcher(),
             FuzzyMatcher(),
             AcronymMatcher(),
-            EmbeddingMatcher(encode),
+            EmbeddingMatcher(SentenceTransformerEncoder()),
         ]
     )
 

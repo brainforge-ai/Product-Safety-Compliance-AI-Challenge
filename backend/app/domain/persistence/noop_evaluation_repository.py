@@ -3,9 +3,10 @@
 from datetime import UTC, datetime
 
 from app.domain.models import EvaluationResult, StoredEvaluation
+from app.domain.persistence.base import EvaluationRepository
 
 
-class NoopEvaluationRepository:
+class NoopEvaluationRepository(EvaluationRepository):
     def save_evaluation(
         self, result: EvaluationResult, *, product_id: str | None = None
     ) -> StoredEvaluation:

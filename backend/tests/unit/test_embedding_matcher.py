@@ -1,4 +1,5 @@
 from app.domain.matching.embedding_matcher import EmbeddingMatcher
+from app.infra.embeddings.base import Encoder
 
 # Fixed toy vector space: an ingredient and forbidden entry embed identically
 # (or nearly so) only when their fake vector matches, so tests are fully
@@ -13,11 +14,11 @@ _VECTORS = {
 }
 
 
-class FakeEncoder:
+class FakeEncoder(Encoder):
     def __init__(self, vectors: dict[str, list[float]]) -> None:
         self._vectors = vectors
 
-    def __call__(self, texts: list[str]) -> list[list[float]]:
+    def encode(self, texts: list[str]) -> list[list[float]]:
         return [self._vectors[text] for text in texts]
 
 
@@ -66,8 +67,8 @@ def test_empty_normalized_text_does_not_match() -> None:
 def test_embeddings_are_cached_per_text() -> None:
     calls: list[list[str]] = []
 
-    class CountingEncoder:
-        def __call__(self, texts: list[str]) -> list[list[float]]:
+    class CountingEncoder(Encoder):
+        def encode(self, texts: list[str]) -> list[list[float]]:
             calls.append(list(texts))
             return [_VECTORS[t] for t in texts]
 

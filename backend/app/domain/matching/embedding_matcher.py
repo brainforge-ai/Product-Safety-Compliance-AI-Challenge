@@ -5,17 +5,13 @@ Encoder is injected for testability; formula-shaped strings are skipped
 Threshold 0.90 is conservative — looser values false-match distinct real ingredients.
 """
 
-from typing import Protocol
-
+from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.formula_parser import is_formula
 from app.domain.normalization.text_normalizer import normalize_text
+from app.infra.embeddings.base import Encoder
 
 DEFAULT_EMBEDDING_THRESHOLD = 0.90
-
-
-class Encoder(Protocol):
-    def __call__(self, texts: list[str]) -> list[list[float]]: ...
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -28,7 +24,7 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-class EmbeddingMatcher:
+class EmbeddingMatcher(Matcher):
     def __init__(self, encoder: Encoder, threshold: float = DEFAULT_EMBEDDING_THRESHOLD) -> None:
         """Configure embedding similarity matching with a cosine threshold."""
         self._encoder = encoder
@@ -38,7 +34,7 @@ class EmbeddingMatcher:
     def _embed(self, text: str) -> list[float]:
         """Return a cached sentence embedding for normalized text."""
         if text not in self._embedding_cache:
-            self._embedding_cache[text] = self._encoder([text])[0]
+            self._embedding_cache[text] = self._encoder.encode([text])[0]
         return self._embedding_cache[text]
 
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:

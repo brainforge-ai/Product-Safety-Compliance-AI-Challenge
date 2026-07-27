@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 from itertools import combinations
 
+from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.formula_parser import formulas_equal, parse_formula
 
@@ -53,7 +54,7 @@ def _formula_result(
     )
 
 
-class FormulaMatcher:
+class FormulaMatcher(Matcher):
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
         """Match when both sides represent the same molecular formula.
 

@@ -1,4 +1,4 @@
-"""Pydantic AI + Gemini adapter for the LLMClient protocol.
+"""Pydantic AI + Gemini adapter for the LLMClient base class.
 
 API key is passed to GoogleProvider from Settings explicitly — pydantic-settings
 loads .env into Settings only, not the process environment.
@@ -9,7 +9,7 @@ from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
 from app.core.config import Settings
-from app.infra.llm.base import LlmClientResult, LlmMatchResponse
+from app.infra.llm.base import LLMClient, LlmClientResult, LlmMatchResponse
 from app.infra.llm.model_naming import strip_provider_prefix
 from app.infra.llm.usage import usage_from_run
 
@@ -40,7 +40,7 @@ def _build_prompt(ingredients: list[str], forbidden_list: list[str]) -> str:
     )
 
 
-class PydanticAiLlmClient:
+class PydanticAiLlmClient(LLMClient):
     def __init__(self, settings: Settings) -> None:
         """Configure a Gemini-backed Pydantic AI agent for ingredient matching."""
         self._model_ref = strip_provider_prefix(settings.llm_model)

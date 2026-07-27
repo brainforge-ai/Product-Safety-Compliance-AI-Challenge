@@ -1,6 +1,6 @@
-"""LLMClient protocol and structured output schema for tier 6."""
+"""LLM client base class and structured output schema for tier 6."""
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,9 @@ class LlmClientResult(BaseModel):
     usage: LlmUsage | None = None
 
 
-class LLMClient(Protocol):
+class LLMClient(ABC):
+    @abstractmethod
     async def match_ingredients(
         self, ingredients: list[str], forbidden_list: list[str]
-    ) -> LlmClientResult: ...
+    ) -> LlmClientResult:
+        """Return ingredient/forbidden pairs the LLM judges to be the same substance."""

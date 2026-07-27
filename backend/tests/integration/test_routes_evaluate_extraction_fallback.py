@@ -12,11 +12,15 @@ set (see `_build_llm_extraction_fallback` in app/main.py).
 from fastapi.testclient import TestClient
 
 from app.domain.models import ExtractedProduct
-from app.domain.parsing.llm_fallback import LlmExtractionOutcome, LlmFallbackExtractor
+from app.domain.parsing.llm_fallback import (
+    LlmExtractionFallback,
+    LlmExtractionOutcome,
+    LlmFallbackExtractor,
+)
 from app.main import create_app
 
 
-class _FakeExtractionClient:
+class _FakeExtractionClient(LlmExtractionFallback):
     async def extract(self, raw_text: str) -> LlmExtractionOutcome:
         return LlmExtractionOutcome(
             product=ExtractedProduct(

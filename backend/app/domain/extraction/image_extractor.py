@@ -6,9 +6,10 @@ import pytesseract
 from PIL import Image
 
 from app.core.exceptions import ExtractionError
+from app.domain.extraction.base import Extractor
 
 
-class ImageExtractor:
+class ImageExtractor(Extractor):
     def extract(self, path: Path) -> str:
         """OCR an image file into plain text."""
         try:

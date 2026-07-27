@@ -8,6 +8,7 @@ import pytesseract
 from PIL import Image
 
 from app.core.exceptions import ExtractionError
+from app.domain.extraction.base import Extractor
 
 # Higher than default 72 DPI so small label text stays legible after rasterization.
 _OCR_ZOOM = 2.0
@@ -20,7 +21,7 @@ def _default_ocr(image: Image.Image) -> str:
     return pytesseract.image_to_string(image)
 
 
-class PdfExtractor:
+class PdfExtractor(Extractor):
     def __init__(self, ocr_func: OcrFunc = _default_ocr) -> None:
         """Configure PDF extraction with a pluggable OCR fallback."""
         self._ocr_func = ocr_func

@@ -1,5 +1,6 @@
 """Tier 4: acronym/abbreviation heuristic match (initials of multi-word names)."""
 
+from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
 
 _MIN_ACRONYM_LENGTH = 2
@@ -31,7 +32,7 @@ def _acronym_matches_name(acronym_candidate: str, name_candidate: str) -> bool:
     return _compute_initials(name_candidate) == acronym_candidate.strip().upper()
 
 
-class AcronymMatcher:
+class AcronymMatcher(Matcher):
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
         """Match a short uppercase acronym to a multi-word chemical name.
 

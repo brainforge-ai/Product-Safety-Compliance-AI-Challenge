@@ -1,12 +1,12 @@
 import asyncio
 
 from app.domain.models import ExtractedProduct, LlmUsage
-from app.domain.parsing.llm_fallback import LlmExtractionOutcome, LlmFallbackExtractor
+from app.domain.parsing.llm_fallback import LlmExtractionFallback, LlmExtractionOutcome, LlmFallbackExtractor
 
 FALLBACK_PRODUCT = ExtractedProduct(product_name="Unknown Product", needs_llm_fallback=True)
 
 
-class FakeExtractionClient:
+class FakeExtractionClient(LlmExtractionFallback):
     def __init__(
         self,
         outcome: LlmExtractionOutcome | None = None,
@@ -24,7 +24,7 @@ class FakeExtractionClient:
         return self.outcome
 
 
-class HangingExtractionClient:
+class HangingExtractionClient(LlmExtractionFallback):
     async def extract(self, raw_text: str) -> LlmExtractionOutcome:
         await asyncio.sleep(10)
         return LlmExtractionOutcome(product=FALLBACK_PRODUCT)

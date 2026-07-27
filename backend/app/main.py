@@ -33,10 +33,13 @@ def _default_match_pipeline(settings: Settings) -> MatchPipeline:
 
     if settings.enable_embedding_matching:
         from app.domain.matching.embedding_matcher import EmbeddingMatcher
-        from app.infra.embeddings.sentence_transformer_encoder import encode, warm_up
+        from app.infra.embeddings.sentence_transformer_encoder import (
+            SentenceTransformerEncoder,
+            warm_up,
+        )
 
         warm_up()
-        matchers.append(EmbeddingMatcher(encode))
+        matchers.append(EmbeddingMatcher(SentenceTransformerEncoder()))
 
     return MatchPipeline(matchers)
 

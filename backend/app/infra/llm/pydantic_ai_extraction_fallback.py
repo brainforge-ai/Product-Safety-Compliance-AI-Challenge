@@ -1,4 +1,4 @@
-"""Pydantic AI + Gemini adapter for LlmExtractionFallback.
+"""Pydantic AI + Gemini adapter for the LlmExtractionFallback base class.
 
 API key is passed to GoogleProvider from Settings explicitly — pydantic-settings
 loads .env into Settings only, not the process environment.
@@ -11,7 +11,7 @@ from pydantic_ai.providers.google import GoogleProvider
 
 from app.core.config import Settings
 from app.domain.models import ExtractedProduct
-from app.domain.parsing.llm_fallback import LlmExtractionOutcome
+from app.domain.parsing.llm_fallback import LlmExtractionFallback, LlmExtractionOutcome
 from app.infra.llm.model_naming import strip_provider_prefix
 from app.infra.llm.usage import usage_from_run
 
@@ -35,7 +35,7 @@ class _ExtractedFields(BaseModel):
     ingredients: list[str] = Field(default_factory=list)
 
 
-class PydanticAiExtractionFallback:
+class PydanticAiExtractionFallback(LlmExtractionFallback):
     def __init__(self, settings: Settings) -> None:
         """Configure a Gemini-backed agent for structured label extraction."""
         self._model_ref = strip_provider_prefix(settings.llm_model)

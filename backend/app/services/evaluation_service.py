@@ -9,6 +9,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.core.exceptions import AppError
 from app.domain.decision.engine import decide, merge_llm_matches, unresolved_ingredients
+from app.domain.extraction.base import Extractor
 from app.domain.extraction.csv_extractor import CsvExtractor
 from app.domain.extraction.detector import FileType, detect_file_type
 from app.domain.extraction.image_extractor import ImageExtractor
@@ -24,7 +25,7 @@ from app.domain.persistence.base import EvaluationRepository
 
 logger = logging.getLogger(__name__)
 
-_EXTRACTORS = {
+_EXTRACTORS: dict[FileType, Extractor] = {
     FileType.PDF: PdfExtractor(),
     FileType.IMAGE: ImageExtractor(),
     FileType.TEXT: TextExtractor(),

@@ -1,10 +1,11 @@
 """Tier 1: normalized exact string match."""
 
+from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.text_normalizer import normalize_text
 
 
-class ExactMatcher:
+class ExactMatcher(Matcher):
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
         """Match when both strings are equal after normalization.
 

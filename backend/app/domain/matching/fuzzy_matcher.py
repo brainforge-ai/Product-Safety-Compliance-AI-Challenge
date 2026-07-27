@@ -5,13 +5,14 @@ Threshold >=90 to avoid false positives on short or similar-but-distinct names.
 
 from rapidfuzz import fuzz
 
+from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.text_normalizer import normalize_text
 
 DEFAULT_FUZZY_THRESHOLD = 90.0
 
 
-class FuzzyMatcher:
+class FuzzyMatcher(Matcher):
     def __init__(self, threshold: float = DEFAULT_FUZZY_THRESHOLD) -> None:
         """Set the minimum rapidfuzz ratio required to count as a match."""
         self._threshold = threshold

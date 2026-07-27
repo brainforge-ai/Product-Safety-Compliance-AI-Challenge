@@ -1,15 +1,21 @@
-"""Persistence port for evaluation history and forbidden-list versions."""
+"""Base class for evaluation history and forbidden-list persistence."""
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from app.domain.models import EvaluationResult, StoredEvaluation
 
 
-class EvaluationRepository(Protocol):
+class EvaluationRepository(ABC):
+    @abstractmethod
     def save_evaluation(
         self, result: EvaluationResult, *, product_id: str | None = None
-    ) -> StoredEvaluation: ...
+    ) -> StoredEvaluation:
+        """Persist one evaluation result."""
 
-    def list_evaluations(self, limit: int = 50, offset: int = 0) -> list[StoredEvaluation]: ...
+    @abstractmethod
+    def list_evaluations(self, limit: int = 50, offset: int = 0) -> list[StoredEvaluation]:
+        """Return stored evaluations, newest first."""
 
-    def save_forbidden_list_version(self, entries: list[str]) -> None: ...
+    @abstractmethod
+    def save_forbidden_list_version(self, entries: list[str]) -> None:
+        """Record a snapshot of the forbidden list after an upload."""
