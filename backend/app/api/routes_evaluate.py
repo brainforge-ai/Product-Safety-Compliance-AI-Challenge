@@ -1,4 +1,4 @@
-"""Evaluation endpoints (ARCHITECTURE.md Section 10)."""
+"""Evaluation endpoints."""
 
 import csv
 import os
@@ -54,10 +54,7 @@ async def _write_upload(upload: UploadFile, path: Path) -> None:
 
 
 def _resolve_within(base: Path, relative: str) -> Path:
-    """Resolve `relative` under `base`, rejecting any attempt to escape it
-    (e.g. `../../etc/passwd`) — `by-path`/`batch-samples` accept a path
-    string from the request, so this is the boundary against path traversal.
-    """
+    """Reject path traversal for by-path and batch-samples requests."""
     candidate = (base / relative).resolve()
     base_resolved = base.resolve()
     if not (candidate == base_resolved or base_resolved in candidate.parents):
@@ -90,18 +87,7 @@ async def evaluate(
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
     extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> EvaluationResult | BatchEvaluationResponse:
-    """Evaluate one or more uploaded product files.
-
-    A request that resolves to exactly one product overall (one file, that
-    itself yields exactly one product row) returns the single README-shaped
-    `EvaluationResult`. Anything else -- more than one uploaded file, or a
-    single CSV file whose rows expand to more than one product -- returns
-    the batch shape instead, since the single-object contract has no room
-    for more than one product. This intentionally makes the response shape
-    depend on the request, trading strict per-route typing for one endpoint
-    that covers both the single-product README contract and multi-file
-    upload (see docs/HURDLES.md for the full rationale).
-    """
+    """Returns single EvaluationResult or batch shape depending on product count."""
     forbidden_list = forbidden_repo.get_all()
     forbidden_list_version = forbidden_repo.version_hash()
 

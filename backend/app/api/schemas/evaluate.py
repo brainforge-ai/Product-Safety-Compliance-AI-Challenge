@@ -1,10 +1,4 @@
-"""Request/response schemas for the /evaluate endpoints.
-
-`EvaluationResult` itself (the single-product response shape) is reused
-directly from `domain/models.py` since it already matches the challenge
-README's contract plus the additive `matches` field (ARCHITECTURE.md Section
-10); no separate API-layer duplicate is needed for it.
-"""
+"""Request/response schemas for /evaluate endpoints."""
 
 from typing import Literal
 

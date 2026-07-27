@@ -1,9 +1,4 @@
-"""Row parser for CSV product files.
-
-Not a member of the `Extractor` protocol: CSV yields row-shaped structured
-data (a list of dicts), not a raw text blob, and is handled as a distinct
-parsing path from Phase 3 onward.
-"""
+"""CSV row parser (yields structured dicts, not a text blob)."""
 
 import csv
 from pathlib import Path

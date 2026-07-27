@@ -1,9 +1,4 @@
-"""OCR-based extraction for image product labels (pytesseract + Pillow).
-
-Requires the Tesseract system binary (`brew install tesseract` /
-`apt-get install tesseract-ocr`); a missing binary is surfaced as a clear,
-actionable ExtractionError rather than a silent failure.
-"""
+"""OCR extraction for image labels (requires Tesseract system binary)."""
 
 from pathlib import Path
 

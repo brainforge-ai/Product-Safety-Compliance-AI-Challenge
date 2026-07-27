@@ -1,18 +1,6 @@
-"""Tier 3: rapidfuzz fuzzy string match on normalized text (ARCHITECTURE.md
-Section 6).
+"""Tier 3: rapidfuzz fuzzy string match on normalized text.
 
-The threshold is deliberately conservative (>=90). A looser threshold that
-would catch loose semantic variants with no lexical overlap (e.g. the
-README's `Glucose` vs `D-Glucopyranose` example) also catches closer but
-genuinely distinct real ingredients: every standard string-similarity
-metric tried (rapidfuzz `ratio`/`partial_ratio`/`token_sort_ratio`/
-`token_set_ratio`/`WRatio`, Levenshtein distance, Jaro-Winkler) scores
-`Glucose` vs `D-Glucopyranose` (~0.65-0.76) *lower* than real sample
-P-2025-0024's `Sodium Laureth Sulfate` vs the forbidden `Sodium Lauryl
-Sulfate` (~0.85-0.91) — a pair that must NOT match. No fuzzy threshold can
-thread both; protecting the real sample from a false reject wins over
-catching the synthetic doc example (see ARCHITECTURE.md Section 6 and
-docs/IMPLEMENTATION_PLAN.md Phase 5/8 notes for the full analysis).
+Threshold >=90 to avoid false positives on short or similar-but-distinct names.
 """
 
 from rapidfuzz import fuzz

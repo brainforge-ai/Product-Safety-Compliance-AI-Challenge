@@ -1,9 +1,4 @@
-"""SQLModel tables backing the toggleable persistence layer (ARCHITECTURE.md Section 8).
-
-Ingredient lists and match results are stored as JSON text columns rather than
-normalized child tables: evaluation history is append-only and read back
-whole, so there's nothing a join would buy us here.
-"""
+"""SQLModel tables for optional persistence (JSON columns for append-only history)."""
 
 from datetime import UTC, datetime
 

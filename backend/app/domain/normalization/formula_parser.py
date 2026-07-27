@@ -1,17 +1,6 @@
-"""Molecular formula canonicalization: parse a flat chemical formula string
-(e.g. `C6H6`, `H2O2`) into an order-independent `{element: count}` dict.
+"""Parse flat chemical formulas into order-independent element counts.
 
-Known limitation: only simple flat formulas are supported (no nested
-parentheses, no hydrate notation like `CuSO4.5H2O`); this matches the
-dataset and keeps the parser honest rather than over-engineered.
-
-This parser is deliberately strict and makes no attempt to correct OCR
-misreadings (e.g. `H2O2` scanned as `H202`, or a leading `C` scanned as
-`€`). Context-free, such corruption is genuinely ambiguous — `H202` could
-be `H:202` or `H:2, O:2`, and nothing in the string alone decides which.
-That correction is resolved in the Phase 5 formula matcher instead, where
-it can be checked against a specific forbidden-list formula (the forbidden
-entry acts as the oracle that disambiguates a candidate correction).
+OCR corruption recovery is handled by formula_matcher, not here.
 """
 
 import re

@@ -1,11 +1,7 @@
-"""Pydantic AI + Gemini adapter for `LlmExtractionFallback`
-(`domain/parsing/llm_fallback.py`).
+"""Pydantic AI + Gemini adapter for LlmExtractionFallback.
 
-Mirrors `pydantic_ai_client.py`'s `GoogleProvider`/`GoogleModel` construction
-(same rationale: explicit API key from `Settings`, `LLM_MODEL` never
-hardcoded) but targets a distinct, lean output schema instead of
-`ExtractedProduct` directly -- `needs_llm_fallback` is bookkeeping for the
-parsing layer, not a field the model should be asked to fill in.
+API key is passed to GoogleProvider from Settings explicitly — pydantic-settings
+loads .env into Settings only, not the process environment.
 """
 
 from pydantic import BaseModel, Field

@@ -1,6 +1,4 @@
-"""File-type detection: extension-based, with a content-sniffing fallback
-for files that arrive without a reliable extension (e.g. an upload stream).
-"""
+"""File-type detection by extension with content-sniffing fallback."""
 
 from enum import StrEnum
 from pathlib import Path

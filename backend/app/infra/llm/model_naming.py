@@ -1,4 +1,4 @@
-"""Shared model-name handling for the Pydantic AI adapters in this package."""
+"""Shared model-name handling for Pydantic AI adapters."""
 
 _GOOGLE_PREFIX = "google:"
 

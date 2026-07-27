@@ -1,4 +1,4 @@
-"""SQLite-backed `EvaluationRepository` (ARCHITECTURE.md Section 8)."""
+"""SQLite-backed EvaluationRepository."""
 
 import json
 

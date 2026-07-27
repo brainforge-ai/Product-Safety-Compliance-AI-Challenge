@@ -1,7 +1,4 @@
-"""Shared matcher protocol for the tiered matching pipeline (ARCHITECTURE.md
-Section 6). Each tier checks one (ingredient, forbidden_entry) pair in
-isolation; the pipeline is responsible for iterating tiers/entries.
-"""
+"""Matcher protocol: one (ingredient, forbidden_entry) pair per call."""
 
 from typing import Protocol
 

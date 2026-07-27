@@ -1,9 +1,4 @@
-"""Regex/heuristic extraction of structured product fields from a raw text blob.
-
-Tolerant of minor formatting differences (extra whitespace, blank lines,
-varied bullet characters) since the hidden evaluation set is not guaranteed
-to match the sample dataset's formatting exactly.
-"""
+"""Regex/heuristic parser for structured product fields from a text blob."""
 
 import re
 
@@ -30,9 +25,6 @@ _DEFAULT_PRODUCT_NAME = "Unknown Product"
 
 
 def parse_product_text(text: str) -> ExtractedProduct:
-    """Parse a raw text blob (from any of the pdf/image/text extractors)
-    into a structured ExtractedProduct.
-    """
     ingredients = _extract_ingredients(text)
 
     return ExtractedProduct(

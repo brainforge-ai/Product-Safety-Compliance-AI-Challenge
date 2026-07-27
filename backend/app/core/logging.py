@@ -1,9 +1,4 @@
-"""Structured logging setup.
-
-Kept deliberately simple (standard library `logging` via `dictConfig`)
-rather than pulling in a dedicated logging dependency, consistent with
-the project's preference for a lean dependency footprint.
-"""
+"""Logging setup via stdlib dictConfig."""
 
 import logging
 from logging.config import dictConfig

@@ -1,10 +1,4 @@
-"""FastAPI dependency providers.
-
-Selection between persistence backends happens here, once, based on
-`ENABLE_PERSISTENCE` (ARCHITECTURE.md Section 8) — route/service code just
-depends on the `EvaluationRepository` protocol and never branches on the flag
-itself.
-"""
+"""FastAPI dependency providers."""
 
 from collections.abc import Iterator
 

@@ -1,7 +1,4 @@
-"""Handles forbidden-list CSV upload/validation, delegating storage to the
-in-memory domain repository and, when persistence is enabled, to the
-`EvaluationRepository` for versioning (ARCHITECTURE.md Section 8).
-"""
+"""Forbidden-list CSV upload and replacement."""
 
 from fastapi import UploadFile
 

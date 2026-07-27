@@ -1,16 +1,4 @@
-"""Lazy-loaded `sentence-transformers` encoder backing tier 5
-(ARCHITECTURE.md Section 6).
-
-`sentence-transformers` (and its torch dependency) is imported only inside
-`_load_model`, never at module import time, so the app boots and `pytest`
-passes fully offline even when the package isn't installed at all (it lives
-in the optional `requirements-ai.txt`, not the base `requirements.txt`). The
-model itself is loaded once and cached (`functools.lru_cache`), matching the
-"lazy singleton at startup" requirement: `main.py` calls `warm_up()` during
-the lifespan hook only when `ENABLE_EMBEDDING_MATCHING` is set, so the first
-real request never pays the load cost, and the model is never touched at all
-when the flag is off.
-"""
+"""Lazy-loaded sentence-transformers encoder for tier 5."""
 
 from functools import lru_cache
 

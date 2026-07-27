@@ -1,10 +1,4 @@
-"""Persistence port for evaluation history and forbidden-list versions.
-
-Framework-free per docs/ARCHITECTURE.md Section 3: this protocol knows
-nothing about SQLModel or SQLite. Concrete adapters live in `app/infra/db/`
-(`SqliteEvaluationRepository`) and here (`NoopEvaluationRepository`), selected
-at startup via `ENABLE_PERSISTENCE` (Section 8).
-"""
+"""Persistence port for evaluation history and forbidden-list versions."""
 
 from typing import Protocol
 

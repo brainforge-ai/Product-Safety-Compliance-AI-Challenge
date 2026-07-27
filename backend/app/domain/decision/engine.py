@@ -1,18 +1,11 @@
-"""Aggregates per-ingredient match results into a final Accept/Reject
-decision, matching the challenge README's response contract
-(ARCHITECTURE.md Section 10).
-"""
+"""Aggregates per-ingredient match results into Accept/Reject."""
 
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.models import EvaluationResult, ExtractedProduct, LlmUsage, MatchResult
 
 
 def _combine_usage(a: LlmUsage | None, b: LlmUsage | None) -> LlmUsage | None:
-    """Sum token usage/cost across two LLM calls for the same product (e.g.
-    the extraction fallback and tier 6 matching, if both ran). Missing cost
-    on one side is treated as 0 rather than making the total None, so a
-    partial pricing lookup failure doesn't hide the other call's real cost.
-    """
+    """Sum token usage across two LLM calls for the same product."""
     if a is None:
         return b
     if b is None:
@@ -68,12 +61,7 @@ def decide(
 
 
 def unresolved_ingredients(product: ExtractedProduct, result: EvaluationResult) -> list[str]:
-    """Ingredients from `product` that `result` has no match for -- the
-    candidates for tier 6's LLM pass. Relies on every matcher setting
-    `matched_text` to the ingredient string verbatim (true of all of tiers
-    1-5 today); if a future matcher normalizes `matched_text` instead, this
-    comparison needs to change with it.
-    """
+    """Ingredients with no match in result (candidates for tier 6)."""
     matched_texts = {match.matched_text for match in result.matches}
     return [ingredient for ingredient in product.ingredients if ingredient not in matched_texts]
 
@@ -83,14 +71,7 @@ def merge_llm_matches(
     llm_matches: list[MatchResult],
     usage: LlmUsage | None = None,
 ) -> EvaluationResult:
-    """Fold an LLM call's additional matches (if any) and usage/cost (if any)
-    into an already-decided result, rebuilding the Accept/Reject status and
-    `reason` list the same way `decide` does. Called for both the extraction
-    fallback (llm_matches always `[]`, since it only recovers ingredients,
-    not matches) and tier 6 matching -- `usage` accumulates across both if a
-    product goes through them in sequence. A true no-op only when there is
-    neither a new match nor new usage to record.
-    """
+    """Merge LLM matches and usage into an existing result."""
     combined_usage = _combine_usage(result.llm_usage, usage)
     if not llm_matches:
         if combined_usage is result.llm_usage:

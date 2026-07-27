@@ -1,13 +1,4 @@
-"""LLM-based extraction fallback, used when `ExtractedProduct.needs_llm_fallback`
-is True (no ingredients section could be found by the regex/heuristic parser).
-
-`LlmExtractionFallback` is the raw port implemented by the concrete Pydantic
-AI / Gemini adapter (`infra/llm/pydantic_ai_extraction_fallback.py`).
-`LlmFallbackExtractor` wraps it with the same timeout + fail-open guarantee
-as tier 6 matching (ARCHITECTURE.md Section 7, `domain/matching/llm_matcher.py`):
-a Gemini outage or timeout must never break evaluation, so on any error the
-original (unresolved) product is returned unchanged rather than raising.
-"""
+"""LLM extraction fallback when regex parsing finds no ingredients section."""
 
 import asyncio
 import logging
@@ -28,10 +19,6 @@ class LlmExtractionOutcome:
 
 
 class LlmExtractionFallback(Protocol):
-    """Given raw text that the structured parser could not find ingredients
-    in, attempt to extract product fields via an LLM.
-    """
-
     async def extract(self, raw_text: str) -> LlmExtractionOutcome: ...
 
 
@@ -46,10 +33,7 @@ class LlmFallbackExtractor:
         self._timeout_seconds = timeout_seconds
 
     async def extract(self, raw_text: str, fallback: ExtractedProduct) -> LlmExtractionOutcome:
-        """Attempt LLM extraction; on any error or timeout, fail open by
-        returning `fallback` (the original regex/heuristic-parsed product)
-        unchanged, with no usage (no successful call to report cost for).
-        """
+        """Fail open on error or timeout, returning fallback unchanged."""
         try:
             return await asyncio.wait_for(
                 self._client.extract(raw_text), timeout=self._timeout_seconds

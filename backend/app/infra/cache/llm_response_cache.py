@@ -1,11 +1,7 @@
-"""In-memory cache for tier-6 LLM match responses, keyed by
-`(normalized_ingredient, forbidden_list_version)` (ARCHITECTURE.md Section 7).
+"""In-memory cache for tier-6 LLM match responses (positive and negative).
 
-Caches BOTH positive and negative ("no match") outcomes: an ingredient the
-LLM confidently ruled out should not be re-queried on every request just
-because it produced no `MatchResult`. The version component invalidates
-stale verdicts the moment the forbidden list changes -- a fresh version hash
-means every entry keyed to the old version is simply never looked up again.
+Keyed by (normalized_ingredient, forbidden_list_version) so list uploads
+invalidate stale verdicts without explicit eviction.
 """
 
 from app.domain.models import MatchResult

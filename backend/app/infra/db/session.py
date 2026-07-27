@@ -1,8 +1,4 @@
-"""Engine/session factory for the toggleable SQLite persistence layer.
-
-Reads `DATABASE_URL` from settings; nothing here is invoked unless
-`ENABLE_PERSISTENCE=true` (ARCHITECTURE.md Section 8).
-"""
+"""SQLite engine/session factory for optional persistence."""
 
 from pathlib import Path
 
@@ -43,9 +39,7 @@ def create_db_engine(database_url: str) -> Engine:
 
 
 def create_db_and_tables(engine: Engine) -> None:
-    # Table classes must be imported (registering them on SQLModel.metadata)
-    # before create_all runs; this is the only caller that needs them, so the
-    # import lives here rather than forcing every caller to remember it.
+    # Import models so SQLModel.metadata is populated before create_all.
     from app.infra.db import models  # noqa: F401
 
     SQLModel.metadata.create_all(engine)

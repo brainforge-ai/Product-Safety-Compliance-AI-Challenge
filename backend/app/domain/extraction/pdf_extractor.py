@@ -1,6 +1,4 @@
-"""PDF text extraction via PyMuPDF, with a page-rasterization + OCR fallback
-for PDFs that turn out to be scans (no embedded text layer).
-"""
+"""PDF text extraction with OCR fallback for scanned pages."""
 
 from collections.abc import Callable
 from pathlib import Path
@@ -11,8 +9,7 @@ from PIL import Image
 
 from app.core.exceptions import ExtractionError
 
-# Rasterization resolution for the OCR fallback: higher than the PDF's default
-# 72 DPI so small label text stays legible after rasterization.
+# Higher than default 72 DPI so small label text stays legible after rasterization.
 _OCR_ZOOM = 2.0
 
 OcrFunc = Callable[[Image.Image], str]

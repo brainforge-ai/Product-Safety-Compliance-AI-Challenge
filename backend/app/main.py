@@ -1,9 +1,4 @@
-"""FastAPI application entrypoint.
-
-This module is intentionally thin: it wires together the app factory,
-mounts routers, and defines the lifespan hook. No business logic should
-live here, per the ports-and-adapters design in docs/ARCHITECTURE.md.
-"""
+"""FastAPI app factory and lifespan wiring."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -35,11 +30,6 @@ logger = logging.getLogger(__name__)
 def _default_match_pipeline(settings: Settings) -> MatchPipeline:
     matchers: list[Matcher] = [ExactMatcher(), FormulaMatcher(), FuzzyMatcher(), AcronymMatcher()]
 
-    # Tier 5 (optional): registers onto this same pipeline like any other
-    # Matcher, since embedding lookup is a synchronous, stateless,
-    # per-(ingredient, forbidden_entry) operation -- unlike tier 6, it fits
-    # the existing MatchPipeline shape without any changes (see
-    # docs/IMPLEMENTATION_PLAN.md Phase 8 notes).
     if settings.enable_embedding_matching:
         from app.domain.matching.embedding_matcher import EmbeddingMatcher
         from app.infra.embeddings.sentence_transformer_encoder import encode, warm_up
@@ -47,11 +37,6 @@ def _default_match_pipeline(settings: Settings) -> MatchPipeline:
         warm_up()
         matchers.append(EmbeddingMatcher(encode))
 
-    # Tiers 1-4 (and 5, if enabled) alone keep the app fully functional with
-    # zero API keys (ARCHITECTURE.md Section 6). Tier 6 (LLM) is NOT
-    # registered here -- see `_build_llm_matcher` and
-    # `domain/matching/llm_matcher.py` for why it's a separate,
-    # product-level, async stage instead.
     return MatchPipeline(matchers)
 
 
@@ -76,10 +61,6 @@ def _build_llm_matcher(settings: Settings) -> LlmMatcher | None:
 
 
 def _build_llm_extraction_fallback(settings: Settings) -> LlmFallbackExtractor | None:
-    # Shares the ENABLE_LLM_MATCHING/GOOGLE_API_KEY toggle with tier 6 rather
-    # than adding a second flag: both features are "is Gemini configured",
-    # and the zero-config default (ARCHITECTURE.md Section 3) already means
-    # neither runs unless a real key is supplied.
     if not settings.enable_llm_matching:
         return None
     if not settings.google_api_key:
@@ -106,8 +87,6 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.settings = settings
 
-    # Toggling ENABLE_PERSISTENCE changes only this wiring; no service/route
-    # code branches on the flag (ARCHITECTURE.md Section 8).
     if settings.enable_persistence:
         app.state.db_engine = create_db_engine(settings.database_url)
         create_db_and_tables(app.state.db_engine)
@@ -128,10 +107,6 @@ def create_app() -> FastAPI:
         title="Product Safety Compliance AI System",
         version="0.1.0",
         lifespan=lifespan,
-        # Swagger UI at /docs, ReDoc at /redoc, raw schema at /openapi.json.
-        # Set explicitly (matching FastAPI's defaults) so the interactive
-        # API docs are a documented, intentional part of the app rather
-        # than an implicit default.
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -142,9 +117,7 @@ def create_app() -> FastAPI:
     app.include_router(forbidden_list_router, prefix="/api", tags=["forbidden-ingredients"])
     app.include_router(products_router, prefix="/api", tags=["products"])
 
-    # UnsupportedFileTypeError is registered explicitly (ahead of its AppError
-    # base) so an unrecognized upload gets 415 rather than the generic 422
-    # every other domain exception maps to.
+    # UnsupportedFileTypeError must register before AppError (415 vs 422).
     @app.exception_handler(UnsupportedFileTypeError)
     async def _handle_unsupported_file_type(request, exc: UnsupportedFileTypeError):
         return JSONResponse(status_code=415, content={"detail": str(exc)})

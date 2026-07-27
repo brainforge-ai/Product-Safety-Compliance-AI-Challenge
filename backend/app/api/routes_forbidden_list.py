@@ -1,4 +1,4 @@
-"""Forbidden ingredient list endpoints (ARCHITECTURE.md Section 10)."""
+"""Forbidden ingredient list endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 

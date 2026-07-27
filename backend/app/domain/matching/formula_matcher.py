@@ -1,13 +1,4 @@
-"""Tier 2: molecular formula canonicalization match (ARCHITECTURE.md Section 6).
-
-Also resolves OCR digit/letter corruption (`H2O2` scanned as `H202`, a
-leading `C` scanned as `€`) by trying corrected variants of the ingredient
-against the specific forbidden formula being checked. Phase 4's
-`parse_formula` is deliberately strict and does not attempt this: a
-corrected variant is only decidable once there's a concrete target formula
-to check it against, which is exactly what this matcher has and a
-context-free parser doesn't.
-"""
+"""Tier 2: molecular formula canonicalization match with OCR corruption recovery."""
 
 from collections.abc import Iterator
 from itertools import combinations
@@ -15,8 +6,7 @@ from itertools import combinations
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.formula_parser import formulas_equal, parse_formula
 
-# Characters Tesseract is known to misread within formulas (Phase 2 spot
-# checks): capital 'O' as digit '0', and occasionally a leading 'C' as '€'.
+# Tesseract OCR misreads within formulas: O→0, C→€.
 _OCR_CORRECTIONS = {"0": "O", "€": "C"}
 
 # Caps the combinatorial search over which ambiguous characters to correct;

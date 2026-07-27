@@ -1,9 +1,4 @@
-"""No-op `EvaluationRepository` used when `ENABLE_PERSISTENCE=false`.
-
-Performs no writes and requires no database, so the system stays fully
-stateless (ARCHITECTURE.md Section 8): every request is recomputed, and
-`GET /api/products` (Phase 7) simply has no history to return.
-"""
+"""No-op EvaluationRepository when persistence is disabled."""
 
 from datetime import UTC, datetime
 

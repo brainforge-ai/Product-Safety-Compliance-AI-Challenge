@@ -1,32 +1,8 @@
-"""Tier 5 (optional): local sentence-embedding cosine-similarity match
-(ARCHITECTURE.md Section 6).
+"""Tier 5: sentence-embedding cosine-similarity match.
 
-The encoder is injected (`Encoder` protocol) rather than importing
-`sentence-transformers` directly, so this class stays testable with a fake,
-fully offline, and so `pytest` never depends on the ~90MB MiniLM download
-(ARCHITECTURE.md Section 13). The real model lives behind a lazy singleton
-loader in `infra/embeddings/sentence_transformer_encoder.py`, wired in by
-`main.py` only when `ENABLE_EMBEDDING_MATCHING` is set.
-
-Formula-shaped ingredients are skipped entirely (`is_formula`): tier 2
-already resolves formulas exhaustively and precisely via order-independent
-parsing, and empirically (see below) treating formula strings as text for
-embedding purposes is actively harmful, not just redundant.
-
-**Empirically verified in Phase 8 (see docs/HURDLES.md and
-docs/IMPLEMENTATION_PLAN.md Phase 8 notes for the full numbers):** the
-challenge README's own worked example -- `Glucose` vs `D-Glucopyranose` as a
-naming-convention variation -- scores only ~0.35 cosine similarity with the
-real `all-MiniLM-L6-v2` model. That is *lower* than the similarity between
-several genuinely distinct ingredient pairs found in the 6 samples that must
-stay Accepted: `Sodium Metabisulfite` vs forbidden `Sodium Lauryl Sulfate`
-scores ~0.75, and (before formula exclusion) `C6H8O7` (citric acid) vs
-forbidden `C6H6` scores ~0.85 purely from character overlap between formula
-strings. This is the same inversion Phase 5 found with fuzzy matching: no
-threshold can catch the README's example without also false-rejecting a real
-Accepted sample, so the threshold is set conservatively (0.90) to protect the
-real samples, same precedent as `fuzzy_matcher.py`. Tier 6 (LLM reasoning)
-remains the only tier that can plausibly catch this class of example.
+Encoder is injected for testability; formula-shaped strings are skipped
+(tier 2 handles those; embedding formula text causes false positives).
+Threshold 0.90 is conservative — looser values false-match distinct real ingredients.
 """
 
 from typing import Protocol

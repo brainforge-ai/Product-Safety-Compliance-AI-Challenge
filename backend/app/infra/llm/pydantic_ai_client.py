@@ -1,20 +1,7 @@
-"""Pydantic AI + Gemini adapter for the `LLMClient` protocol
-(ARCHITECTURE.md Section 7).
+"""Pydantic AI + Gemini adapter for the LLMClient protocol.
 
-Decision: Pydantic AI over LiteLLM/Vercel AI SDK -- see ARCHITECTURE.md
-Section 7 for the full writeup (LiteLLM's March 2026 supply-chain
-compromise, a thinner dependency surface via Google's official
-`google-genai` SDK, and native validated structured output via
-`output_type`).
-
-The API key is passed to `GoogleProvider` explicitly from our own `Settings`
-object rather than relying on `GoogleProvider`'s automatic `GOOGLE_API_KEY`/
-`GEMINI_API_KEY` environment-variable pickup: `pydantic-settings` loads
-`.env` into the `Settings` model only, it does not itself set the process
-environment, so relying on the implicit pickup would silently break whenever
-a key is supplied only via `.env` and not also exported into the shell.
-`LLM_MODEL` is never hardcoded, always read from `settings.llm_model`, per
-ARCHITECTURE.md Section 7.
+API key is passed to GoogleProvider from Settings explicitly — pydantic-settings
+loads .env into Settings only, not the process environment.
 """
 
 from pydantic_ai import Agent

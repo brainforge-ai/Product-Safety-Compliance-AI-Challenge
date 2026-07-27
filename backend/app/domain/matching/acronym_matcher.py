@@ -1,17 +1,4 @@
-"""Tier 4: acronym/abbreviation heuristic match (ARCHITECTURE.md Section 6).
-
-Generic initials-based algorithm, not a hardcoded ingredient-to-acronym
-lookup table (per the generalization principle in Section 3): given a
-multi-word name, its "acronym" is the initials of each whitespace-separated
-word. Checked in both directions since either the ingredient or the
-forbidden entry could be the spelled-out form.
-
-Known limitation: this only decomposes on whitespace, so a single-word
-compound spelling (e.g. "Hydroxyanisole" as one word rather than "Hydroxy
-Anisole") is not decomposed into further initials -- doing so generically
-without a dataset-specific lookup would require morpheme-level chemical
-nomenclature parsing, which is out of scope here.
-"""
+"""Tier 4: acronym/abbreviation heuristic match (initials of multi-word names)."""
 
 from app.domain.models import MatchMethod, MatchResult
 

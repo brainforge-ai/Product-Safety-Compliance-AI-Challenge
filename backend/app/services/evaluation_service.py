@@ -1,11 +1,4 @@
-"""Orchestrates extraction, parsing, matching, and decisioning for one or more
-product files, plus optional persistence of the results.
-
-This module is the "services" layer from ARCHITECTURE.md Section 9: unlike
-`domain/`, it is allowed to depend on FastAPI (`run_in_threadpool`, to keep
-blocking extraction/OCR work off the event loop per Section 12) and on the
-persistence port. Route handlers stay thin and call into here.
-"""
+"""Orchestrates product file evaluation (extract → parse → match → decide)."""
 
 import asyncio
 import logging
@@ -41,21 +34,12 @@ DEFAULT_BATCH_CONCURRENCY = 8
 
 
 def _csv_row_as_text(row: dict[str, str]) -> str:
-    """Render a CSV row as a text blob, for feeding to the same LLM
-    extraction fallback used for pdf/image/text files, when a row is missing
-    an ingredients column.
-    """
     return "\n".join(f"{key}: {value}" for key, value in row.items())
 
 
 @dataclass
 class ProductEvaluation:
-    """One product's parsed fields alongside its Accept/Reject decision.
-
-    `ExtractedProduct` is kept around (not just the `EvaluationResult`) so
-    callers can persist by `product_id`, which isn't part of the
-    README-shaped result itself.
-    """
+    """Pairs ExtractedProduct with EvaluationResult for product_id persistence."""
 
     product: ExtractedProduct
     result: EvaluationResult
@@ -70,26 +54,7 @@ async def evaluate_products_from_file(
     extraction_fallback: LlmFallbackExtractor | None = None,
     forbidden_list_version: str = "",
 ) -> list[ProductEvaluation]:
-    """Evaluate every product found in one file.
-
-    Almost always a single-item list (pdf/image/text files each describe one
-    product). A CSV file is the exception: `CsvExtractor` yields one row per
-    product, so a multi-row CSV legitimately produces multiple results — the
-    `/evaluate` route falls back to its batch response shape whenever this
-    returns more than one item.
-
-    When `extraction_fallback` is provided, any product the regex/heuristic
-    parser flagged with `needs_llm_fallback=True` (no ingredients section
-    found) is retried through the LLM before matching runs, so a file with
-    unusual formatting still gets a real Accept/Reject decision instead of
-    an empty ingredient list — see `domain/parsing/llm_fallback.py`.
-
-    When `llm_matcher` is provided (tier 6 is enabled), every product's
-    still-unresolved ingredients after tiers 1-5 are batched into one LLM
-    call per product and folded into the final result — see
-    `domain/matching/llm_matcher.py` for why this happens here rather than
-    inside `pipeline`/`decide`.
-    """
+    """Returns one result per product; multi-row CSVs yield multiple."""
     file_type = await run_in_threadpool(detect_file_type, path)
 
     if file_type == FileType.CSV:

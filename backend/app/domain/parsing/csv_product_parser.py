@@ -1,10 +1,4 @@
-"""Maps a CSV extractor row (a dict of column -> value) to the same
-ExtractedProduct shape produced by the text-blob parser.
-
-Kept as a distinct parsing path from `product_parser.py` since CSV rows are
-already structured (no bullet-list tokenization needed) and column naming
-can vary, unlike the fixed-template text/pdf/image files.
-"""
+"""Maps a CSV row dict to ExtractedProduct."""
 
 import re
 

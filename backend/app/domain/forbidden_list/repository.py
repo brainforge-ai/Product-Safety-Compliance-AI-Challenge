@@ -1,10 +1,4 @@
-"""CSV-backed forbidden ingredient list repository.
-
-Loads the default list from a CSV file and supports in-memory replacement
-(e.g. from an uploaded CSV). Persistence of uploaded lists across restarts
-is wired in Phase 6; this repository is the in-memory source of truth
-either way.
-"""
+"""In-memory forbidden ingredient list loaded from CSV."""
 
 import csv
 import hashlib
@@ -33,20 +27,12 @@ class ForbiddenListRepository:
         self._entries = list(entries)
 
     def version_hash(self) -> str:
-        """A stable identifier for the current entry set, order-independent
-        and case-insensitive. Used to key the tier-6 LLM response cache
-        (ARCHITECTURE.md Section 7) so a `POST /forbidden-ingredients`
-        upload can never serve a verdict computed against the previous list
-        -- there is no separate `ForbiddenListVersion` row to read here,
-        since persistence is optional and this repository must work whether
-        or not it's enabled.
-        """
+        """Stable, order-independent hash of the current entry set."""
         canonical = "\n".join(sorted(e.strip().lower() for e in self._entries))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def parse_csv_entries(lines: Iterable[str]) -> list[str]:
-    """Read the first column of a forbidden-list CSV, from any file-like/line iterable."""
     reader = csv.DictReader(lines)
     column = reader.fieldnames[0] if reader.fieldnames else None
     if column is None:

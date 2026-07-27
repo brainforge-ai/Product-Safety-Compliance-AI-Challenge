@@ -1,4 +1,4 @@
-"""Tier 1: normalized exact string match (ARCHITECTURE.md Section 6)."""
+"""Tier 1: normalized exact string match."""
 
 from app.domain.models import MatchMethod, MatchResult
 from app.domain.normalization.text_normalizer import normalize_text

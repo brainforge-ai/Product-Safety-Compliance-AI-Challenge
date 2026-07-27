@@ -1,8 +1,4 @@
-"""Evaluation history endpoint (ARCHITECTURE.md Section 10).
-
-Only populated when `ENABLE_PERSISTENCE=true`; with persistence off,
-`NoopEvaluationRepository.list_evaluations()` always returns an empty list.
-"""
+"""Evaluation history endpoint."""
 
 from fastapi import APIRouter, Depends
 

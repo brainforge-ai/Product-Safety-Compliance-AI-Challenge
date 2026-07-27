@@ -1,8 +1,4 @@
-"""The set of valid chemical element symbols (periodic table), used by the
-formula parser to reject strings that merely look formula-shaped (e.g. an
-acronym like "BHT") but contain an invalid element token ("T" is not an
-element).
-"""
+"""Valid periodic-table element symbols for formula parsing."""
 
 ELEMENT_SYMBOLS: frozenset[str] = frozenset(
     {

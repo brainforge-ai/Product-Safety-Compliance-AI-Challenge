@@ -1,14 +1,4 @@
-"""Token-usage/cost accounting shared by the Pydantic AI adapters in this
-package.
-
-Cost lookup uses `genai-prices` (already a transitive dependency of
-`pydantic-ai`, and a maintained pricing database covering Gemini/OpenAI/
-Anthropic/etc. model rates) rather than a hand-maintained price table, so it
-tracks provider pricing changes automatically. If a model isn't in that
-database, or the lookup fails for any reason, pricing fields are left None
-rather than reporting a guessed number -- this must never break a real
-answer just because cost reporting failed.
-"""
+"""Token usage and cost accounting for Pydantic AI adapters."""
 
 import logging
 
