@@ -10,7 +10,11 @@ from pathlib import Path
 from app.domain.matching.exact_matcher import ExactMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.models import ExtractedProduct, LlmUsage
-from app.domain.parsing.llm_fallback import LlmExtractionFallback, LlmExtractionOutcome, LlmFallbackExtractor
+from app.domain.parsing.llm_fallback import (
+    LlmExtractionFallback,
+    LlmExtractionOutcome,
+    LlmFallbackExtractor,
+)
 from app.services.evaluation_service import evaluate_products_from_file
 
 PIPELINE = MatchPipeline([ExactMatcher()])

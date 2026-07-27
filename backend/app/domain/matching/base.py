@@ -1,7 +1,7 @@
 """Base class for sync pipeline matchers (tiers 1–5).
 
 Each matcher answers one question for a single (ingredient, forbidden_entry) pair.
-LlmMatcher is intentionally separate — async, batched, and not pipeline-compatible.
+LlmMatcher is intentionally separate - async, batched, and not pipeline-compatible.
 """
 
 from abc import ABC, abstractmethod

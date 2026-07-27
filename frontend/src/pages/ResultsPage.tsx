@@ -69,7 +69,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-neutral-400">—</span>
+                      <span className="text-neutral-400">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -80,7 +80,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                         {row.reason.length > 0 ? (
                           row.reason.join(', ')
                         ) : (
-                          <span className="text-neutral-400">—</span>
+                          <span className="text-neutral-400">-</span>
                         )}
                         {canExpand && (
                           <span className="ml-2 text-xs text-neutral-400">

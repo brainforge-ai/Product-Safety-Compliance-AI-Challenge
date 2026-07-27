@@ -34,7 +34,7 @@ class PdfExtractor(Extractor):
                 text = "\n".join(page.get_text() for page in doc)
                 if text.strip():
                     return text
-                # Scanned PDFs have no text layer — rasterize each page and OCR instead.
+                # Scanned PDFs have no text layer - rasterize each page and OCR instead.
                 return self._ocr_fallback(doc)
         except RuntimeError as exc:
             raise ExtractionError(f"Could not parse PDF file: {path}") from exc

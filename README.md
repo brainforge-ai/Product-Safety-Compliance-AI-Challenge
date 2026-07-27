@@ -1,5 +1,7 @@
 # 🧪 Product Safety Compliance AI Challenge
 
+> **This is a completed submission.** See [SETUP.md](SETUP.md) to run it, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design, and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) / [docs/HURDLES.md](docs/HURDLES.md) for how it was built.
+
 ## 📋 Overview
 
 This technical challenge evaluates a candidate’s ability to design and implement an **AI-powered system** that determines whether a **product** (represented via various unstructured and structured data sources) should be **accepted or rejected** based on the presence of **forbidden chemical ingredients**.

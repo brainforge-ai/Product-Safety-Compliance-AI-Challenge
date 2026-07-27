@@ -1,7 +1,11 @@
 import asyncio
 
 from app.domain.models import ExtractedProduct, LlmUsage
-from app.domain.parsing.llm_fallback import LlmExtractionFallback, LlmExtractionOutcome, LlmFallbackExtractor
+from app.domain.parsing.llm_fallback import (
+    LlmExtractionFallback,
+    LlmExtractionOutcome,
+    LlmFallbackExtractor,
+)
 
 FALLBACK_PRODUCT = ExtractedProduct(product_name="Unknown Product", needs_llm_fallback=True)
 

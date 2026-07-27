@@ -1,6 +1,6 @@
 """Pydantic AI + Gemini adapter for the LLMClient base class.
 
-API key is passed to GoogleProvider from Settings explicitly — pydantic-settings
+API key is passed to GoogleProvider from Settings explicitly - pydantic-settings
 loads .env into Settings only, not the process environment.
 """
 

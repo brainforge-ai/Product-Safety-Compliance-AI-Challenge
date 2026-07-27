@@ -1,6 +1,6 @@
 """Tier 6: async batched LLM matching (runs per product after tiers 1-5).
 
-Not a MatchPipeline Matcher — async, product-scoped, and incompatible with
+Not a MatchPipeline Matcher - async, product-scoped, and incompatible with
 the shared sync pipeline instance under concurrent evaluation.
 Formula-shaped ingredients and forbidden entries are excluded (tier 2 handles
 those; LLM can hallucinate false formula matches).

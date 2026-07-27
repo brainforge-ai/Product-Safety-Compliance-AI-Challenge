@@ -133,7 +133,7 @@ async def evaluate_paths_concurrently(
     """Evaluate many files concurrently, bounded by a semaphore.
 
     Each path's outcome is either its list of `ProductEvaluation`s or the
-    `Exception` it raised — never a raised exception that would abort the
+    `Exception` it raised - never a raised exception that would abort the
     rest of the batch. Callers isolate per-file failures from this list.
     """
     semaphore = asyncio.Semaphore(concurrency)

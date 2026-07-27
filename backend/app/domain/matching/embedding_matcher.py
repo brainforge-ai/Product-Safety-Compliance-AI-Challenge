@@ -2,7 +2,7 @@
 
 Encoder is injected for testability; formula-shaped strings are skipped
 (tier 2 handles those; embedding formula text causes false positives).
-Threshold 0.90 is conservative — looser values false-match distinct real ingredients.
+Threshold 0.90 is conservative - looser values false-match distinct real ingredients.
 """
 
 from app.domain.matching.base import Matcher

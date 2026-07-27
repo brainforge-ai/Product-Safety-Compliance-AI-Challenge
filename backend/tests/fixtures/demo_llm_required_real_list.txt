@@ -1,0 +1,18 @@
+Product ID: DEMO-LLM-002
+Product Name: Everyday Hydrating Cream
+SKU: DEMOLLM02
+
+Description:
+A synthetic demo product for exercising tier 6 (LLM reasoning) against the
+REAL default forbidden list -- no custom list swap needed. Its only
+forbidden-adjacent ingredient is the ester/IUPAC-style name for a real
+forbidden entry (Butylparaben), which tiers 1-4 cannot resolve on their own
+(confirmed empirically: rapidfuzz ratio/token_sort/token_set/WRatio all score
+"Butylparaben" vs "Butyl 4-hydroxybenzoate" well under the production fuzzy
+threshold). Not part of the provided sample dataset -- used by
+test_routes_evaluate_llm.py and the Loom demo script in docs/LOOM_NOTES.md.
+
+Ingredients / Chemical Formulas:
+- Aqua
+- Glycerin
+- Butyl 4-hydroxybenzoate
