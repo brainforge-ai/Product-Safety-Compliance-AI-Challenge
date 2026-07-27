@@ -33,6 +33,7 @@ def _acronym_matches_name(acronym_candidate: str, name_candidate: str) -> bool:
 
 class AcronymMatcher:
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
+        """Match acronyms to multi-word names via initials in either direction."""
         is_match = _acronym_matches_name(ingredient, forbidden_entry) or _acronym_matches_name(
             forbidden_entry, ingredient
         )

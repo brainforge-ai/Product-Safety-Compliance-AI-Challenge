@@ -25,6 +25,7 @@ _DEFAULT_PRODUCT_NAME = "Unknown Product"
 
 
 def parse_product_text(text: str) -> ExtractedProduct:
+    """Parse structured product fields and ingredients from label text."""
     ingredients = _extract_ingredients(text)
 
     return ExtractedProduct(
@@ -38,6 +39,7 @@ def parse_product_text(text: str) -> ExtractedProduct:
 
 
 def _extract_field(pattern: re.Pattern[str], text: str, *, join_lines: bool = False) -> str | None:
+    """Extract and clean the first regex capture group from text."""
     match = pattern.search(text)
     if not match:
         return None
@@ -48,6 +50,7 @@ def _extract_field(pattern: re.Pattern[str], text: str, *, join_lines: bool = Fa
 
 
 def _extract_ingredients(text: str) -> list[str]:
+    """Parse bullet-listed ingredients following the ingredients header."""
     header_match = _INGREDIENTS_HEADER_RE.search(text)
     if not header_match:
         return []

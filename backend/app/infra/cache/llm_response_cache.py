@@ -11,6 +11,7 @@ CacheKey = tuple[str, str]
 
 class LlmResponseCache:
     def __init__(self) -> None:
+        """Create an in-memory cache keyed by ingredient and list version."""
         self._store: dict[CacheKey, MatchResult | None] = {}
 
     def get(
@@ -30,4 +31,5 @@ class LlmResponseCache:
         forbidden_list_version: str,
         result: MatchResult | None,
     ) -> None:
+        """Store a match result or cached negative for an ingredient."""
         self._store[(normalized_ingredient, forbidden_list_version)] = result

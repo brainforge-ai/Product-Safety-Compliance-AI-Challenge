@@ -16,10 +16,12 @@ from app.infra.db.session import get_session
 
 
 def get_settings_dep(request: Request) -> Settings:
+    """Return application settings from app state."""
     return request.app.state.settings
 
 
 def get_evaluation_repository(request: Request) -> Iterator[EvaluationRepository]:
+    """Yield a per-request evaluation repository (SQLite or no-op)."""
     settings = request.app.state.settings
     if not settings.enable_persistence:
         yield NoopEvaluationRepository()
@@ -31,16 +33,20 @@ def get_evaluation_repository(request: Request) -> Iterator[EvaluationRepository
 
 
 def get_forbidden_list_repository(request: Request) -> ForbiddenListRepository:
+    """Return the in-memory forbidden ingredient list repository."""
     return request.app.state.forbidden_list_repository
 
 
 def get_match_pipeline(request: Request) -> MatchPipeline:
+    """Return the configured ingredient matching pipeline."""
     return request.app.state.match_pipeline
 
 
 def get_llm_matcher(request: Request) -> LlmMatcher | None:
+    """Return the optional tier-6 LLM matcher, if enabled."""
     return request.app.state.llm_matcher
 
 
 def get_llm_extraction_fallback(request: Request) -> LlmFallbackExtractor | None:
+    """Return the optional LLM extraction fallback, if enabled."""
     return request.app.state.llm_extraction_fallback

@@ -10,6 +10,7 @@ from app.core.exceptions import ExtractionError
 
 class ImageExtractor:
     def extract(self, path: Path) -> str:
+        """OCR an image file into plain text."""
         try:
             with Image.open(path) as image:
                 return pytesseract.image_to_string(image)

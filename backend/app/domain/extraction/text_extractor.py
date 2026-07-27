@@ -7,6 +7,7 @@ from app.core.exceptions import ExtractionError
 
 class TextExtractor:
     def extract(self, path: Path) -> str:
+        """Read a plain-text product file as UTF-8, falling back to Latin-1."""
         try:
             return path.read_text(encoding="utf-8")
         except UnicodeDecodeError:

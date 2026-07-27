@@ -34,6 +34,7 @@ DEFAULT_BATCH_CONCURRENCY = 8
 
 
 def _csv_row_as_text(row: dict[str, str]) -> str:
+    """Serialize a CSV row as key: value lines for LLM extraction fallback."""
     return "\n".join(f"{key}: {value}" for key, value in row.items())
 
 
@@ -111,6 +112,7 @@ def persist_evaluation(
     *,
     product_id: str | None = None,
 ) -> None:
+    """Save one evaluation result when persistence is enabled."""
     repo.save_evaluation(item.result, product_id=product_id or item.product.product_id)
 
 

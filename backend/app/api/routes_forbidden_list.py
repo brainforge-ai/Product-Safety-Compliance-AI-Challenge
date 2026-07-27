@@ -16,6 +16,7 @@ router = APIRouter()
 async def get_forbidden_ingredients(
     repository: ForbiddenListRepository = Depends(get_forbidden_list_repository),
 ) -> ForbiddenListResponse:
+    """Return the current forbidden ingredient list."""
     return ForbiddenListResponse(ingredients=repository.get_all())
 
 
@@ -25,6 +26,7 @@ async def replace_forbidden_ingredients(
     repository: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     evaluation_repository: EvaluationRepository = Depends(get_evaluation_repository),
 ) -> ForbiddenListResponse:
+    """Replace the forbidden list from an uploaded CSV file."""
     try:
         entries = await replace_forbidden_list_from_upload(file, repository, evaluation_repository)
     except ParsingError as exc:

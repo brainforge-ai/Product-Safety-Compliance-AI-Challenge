@@ -8,6 +8,7 @@ from app.core.exceptions import ExtractionError
 
 class CsvExtractor:
     def extract(self, path: Path) -> list[dict[str, str]]:
+        """Read a CSV file and return one dict per row."""
         try:
             with path.open(newline="", encoding="utf-8") as f:
                 return list(csv.DictReader(f))

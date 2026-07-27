@@ -20,6 +20,7 @@ def _sqlite_file_path(database_url: str) -> Path | None:
 
 
 def create_db_engine(database_url: str) -> Engine:
+    """Create a SQLAlchemy engine with SQLite-friendly defaults."""
     is_sqlite = database_url.startswith("sqlite")
     file_path = _sqlite_file_path(database_url)
 
@@ -39,6 +40,7 @@ def create_db_engine(database_url: str) -> Engine:
 
 
 def create_db_and_tables(engine: Engine) -> None:
+    """Create all SQLModel tables if they do not already exist."""
     # Import models so SQLModel.metadata is populated before create_all.
     from app.infra.db import models  # noqa: F401
 
@@ -46,4 +48,5 @@ def create_db_and_tables(engine: Engine) -> None:
 
 
 def get_session(engine: Engine) -> Session:
+    """Open a new SQLModel session bound to the given engine."""
     return Session(engine)

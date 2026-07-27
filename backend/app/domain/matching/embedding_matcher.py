@@ -19,6 +19,7 @@ class Encoder(Protocol):
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Compute cosine similarity between two embedding vectors."""
     dot = sum(x * y for x, y in zip(a, b, strict=True))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(y * y for y in b) ** 0.5
@@ -29,16 +30,19 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
 
 class EmbeddingMatcher:
     def __init__(self, encoder: Encoder, threshold: float = DEFAULT_EMBEDDING_THRESHOLD) -> None:
+        """Configure embedding similarity matching with a cosine threshold."""
         self._encoder = encoder
         self._threshold = threshold
         self._embedding_cache: dict[str, list[float]] = {}
 
     def _embed(self, text: str) -> list[float]:
+        """Return a cached sentence embedding for normalized text."""
         if text not in self._embedding_cache:
             self._embedding_cache[text] = self._encoder([text])[0]
         return self._embedding_cache[text]
 
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
+        """Match when embedding cosine similarity exceeds the threshold."""
         if is_formula(ingredient) or is_formula(forbidden_entry):
             return None
 

@@ -29,6 +29,7 @@ def _combine_usage(a: LlmUsage | None, b: LlmUsage | None) -> LlmUsage | None:
 def _build_result(
     product_name: str, matches: list[MatchResult], llm_usage: LlmUsage | None = None
 ) -> EvaluationResult:
+    """Build an Accepted or Rejected result from matched forbidden ingredients."""
     if not matches:
         return EvaluationResult(product_name=product_name, status="Accepted", llm_usage=llm_usage)
 
@@ -52,6 +53,7 @@ def _build_result(
 def decide(
     product: ExtractedProduct, forbidden_list: list[str], pipeline: MatchPipeline
 ) -> EvaluationResult:
+    """Run the matcher pipeline on all ingredients and return Accept/Reject."""
     matches = [
         result
         for ingredient in product.ingredients

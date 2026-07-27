@@ -15,5 +15,6 @@ async def list_products(
     offset: int = 0,
     repository: EvaluationRepository = Depends(get_evaluation_repository),
 ) -> EvaluationHistoryResponse:
+    """List persisted evaluation history with pagination."""
     items = repository.list_evaluations(limit=limit, offset=offset)
     return EvaluationHistoryResponse(items=items, limit=limit, offset=offset)

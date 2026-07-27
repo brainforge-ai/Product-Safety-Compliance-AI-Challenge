@@ -35,6 +35,7 @@ class LlmMatcher:
         *,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
+        """Wrap an LLM client with caching and timeout fail-open behavior."""
         self._client = client
         self._cache = cache
         self._timeout_seconds = timeout_seconds
@@ -49,6 +50,7 @@ class LlmMatcher:
         forbidden_list: list[str],
         forbidden_list_version: str,
     ) -> LlmMatchOutcome:
+        """Match unresolved ingredients via LLM, using cache when possible."""
         if not ingredients or not forbidden_list:
             return LlmMatchOutcome()
 
@@ -86,6 +88,7 @@ class LlmMatcher:
         forbidden_list: list[str],
         forbidden_list_version: str,
     ) -> tuple[dict[str, MatchResult | None], LlmUsage | None]:
+        """Call the LLM for uncached ingredients and store results in cache."""
         results: dict[str, MatchResult | None] = dict.fromkeys(ingredients)
 
         try:

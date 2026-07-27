@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def usage_from_run(run_usage: RunUsage, model_ref: str) -> LlmUsage:
+    """Convert Pydantic AI run usage into domain usage with optional cost."""
     input_cost: float | None = None
     output_cost: float | None = None
     total_cost: float | None = None

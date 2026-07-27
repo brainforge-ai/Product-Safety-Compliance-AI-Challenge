@@ -17,6 +17,7 @@ _CORRECTED_CONFIDENCE = 0.9
 
 
 def _iter_corrected_variants(text: str) -> Iterator[str]:
+    """Yield formula strings with OCR misreads corrected in combinations."""
     positions = [i for i, ch in enumerate(text) if ch in _OCR_CORRECTIONS]
     limit = min(len(positions), _MAX_CORRECTIONS)
     for r in range(1, limit + 1):
@@ -29,6 +30,7 @@ def _iter_corrected_variants(text: str) -> Iterator[str]:
 
 class FormulaMatcher:
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
+        """Match equivalent molecular formulas, including OCR-corrupted variants."""
         forbidden_parsed = parse_formula(forbidden_entry)
         if forbidden_parsed is None:
             return None  # this tier only applies when the forbidden entry is itself a formula

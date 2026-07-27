@@ -38,6 +38,7 @@ router = APIRouter()
 
 @contextmanager
 def _staged_upload(upload: UploadFile) -> Iterator[Path]:
+    """Write an upload to a temp file and delete it when the context exits."""
     suffix = Path(upload.filename or "").suffix
     fd, name = tempfile.mkstemp(suffix=suffix)
     os.close(fd)
@@ -49,6 +50,7 @@ def _staged_upload(upload: UploadFile) -> Iterator[Path]:
 
 
 async def _write_upload(upload: UploadFile, path: Path) -> None:
+    """Persist uploaded bytes to a staged file on disk."""
     content = await upload.read()
     await run_in_threadpool(path.write_bytes, content)
 
@@ -67,6 +69,7 @@ def _resolve_within(base: Path, relative: str) -> Path:
 def _single_result(
     items: list[ProductEvaluation], *, source: str
 ) -> ProductEvaluation:
+    """Require exactly one product from a by-path evaluation."""
     if len(items) != 1:
         raise HTTPException(
             status_code=400,
@@ -142,6 +145,7 @@ async def evaluate_by_path(
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
     extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> EvaluationResult:
+    """Evaluate a single sample file by path under the sample data directory."""
     resolved = _resolve_within(settings.sample_data_dir, body.path)
     if not resolved.is_file():
         raise HTTPException(status_code=404, detail=f"No such file: {body.path}")
@@ -169,6 +173,7 @@ async def evaluate_batch_samples(
     llm_matcher: LlmMatcher | None = Depends(get_llm_matcher),
     extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> BatchEvaluationResponse:
+    """Evaluate every file listed in sample_data_dir/product_index.csv."""
     index_path = settings.sample_data_dir / "product_index.csv"
     if not index_path.is_file():
         raise HTTPException(status_code=404, detail=f"No product_index.csv found at {index_path}")
@@ -202,6 +207,7 @@ def _to_batch_items(
     *,
     product_id: str | None = None,
 ) -> list[BatchItemResult]:
+    """Map a per-file evaluation outcome into API batch result items."""
     if isinstance(outcome, Exception):
         return [
             BatchItemResult(

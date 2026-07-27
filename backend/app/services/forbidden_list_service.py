@@ -12,6 +12,7 @@ async def replace_forbidden_list_from_upload(
     repository: ForbiddenListRepository,
     evaluation_repository: EvaluationRepository,
 ) -> list[str]:
+    """Decode a CSV upload, replace the in-memory list, and persist a version snapshot."""
     raw_bytes = await upload.read()
     try:
         text = raw_bytes.decode("utf-8")

@@ -29,6 +29,7 @@ class LlmFallbackExtractor:
         *,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
+        """Wrap an LLM extractor with timeout and fail-open behavior."""
         self._client = client
         self._timeout_seconds = timeout_seconds
 

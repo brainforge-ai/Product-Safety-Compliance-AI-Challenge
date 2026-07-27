@@ -5,6 +5,7 @@ from logging.config import dictConfig
 
 
 def setup_logging(level: str = "INFO") -> None:
+    """Configure root logger with a console handler and standard format."""
     dictConfig(
         {
             "version": 1,
@@ -29,4 +30,5 @@ def setup_logging(level: str = "INFO") -> None:
 
 
 def get_logger(name: str) -> logging.Logger:
+    """Return a named logger after setup_logging has been called."""
     return logging.getLogger(name)

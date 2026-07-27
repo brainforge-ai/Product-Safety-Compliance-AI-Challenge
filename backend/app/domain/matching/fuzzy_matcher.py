@@ -13,9 +13,11 @@ DEFAULT_FUZZY_THRESHOLD = 90.0
 
 class FuzzyMatcher:
     def __init__(self, threshold: float = DEFAULT_FUZZY_THRESHOLD) -> None:
+        """Set the minimum rapidfuzz ratio required to count as a match."""
         self._threshold = threshold
 
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
+        """Match when normalized strings exceed the fuzzy similarity threshold."""
         normalized_ingredient = normalize_text(ingredient)
         normalized_forbidden = normalize_text(forbidden_entry)
         if not normalized_ingredient or not normalized_forbidden:

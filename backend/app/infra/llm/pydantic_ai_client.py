@@ -29,6 +29,7 @@ _SYSTEM_PROMPT = (
 
 
 def _build_prompt(ingredients: list[str], forbidden_list: list[str]) -> str:
+    """Format ingredients and forbidden entries for the LLM match prompt."""
     ingredients_block = "\n".join(f"- {i}" for i in ingredients)
     forbidden_block = "\n".join(f"- {f}" for f in forbidden_list)
     return (
@@ -41,6 +42,7 @@ def _build_prompt(ingredients: list[str], forbidden_list: list[str]) -> str:
 
 class PydanticAiLlmClient:
     def __init__(self, settings: Settings) -> None:
+        """Configure a Gemini-backed Pydantic AI agent for ingredient matching."""
         self._model_ref = strip_provider_prefix(settings.llm_model)
         provider = GoogleProvider(api_key=settings.google_api_key)
         model = GoogleModel(self._model_ref, provider=provider)
@@ -49,6 +51,7 @@ class PydanticAiLlmClient:
     async def match_ingredients(
         self, ingredients: list[str], forbidden_list: list[str]
     ) -> LlmClientResult:
+        """Ask the LLM which ingredients match forbidden entries."""
         result = await self._agent.run(_build_prompt(ingredients, forbidden_list))
         return LlmClientResult(
             matches=result.output.matches,

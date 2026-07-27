@@ -7,6 +7,7 @@ _NON_WORD_RE = re.compile(r"[^\w]", re.UNICODE)
 
 
 def normalize_text(text: str) -> str:
+    """Normalize text for case- and punctuation-insensitive comparison."""
     normalized = unicodedata.normalize("NFKC", text)
     normalized = normalized.casefold()
     return _NON_WORD_RE.sub("", normalized)

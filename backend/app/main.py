@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def _default_match_pipeline(settings: Settings) -> MatchPipeline:
+    """Build the tiered matcher pipeline, optionally including embeddings."""
     matchers: list[Matcher] = [ExactMatcher(), FormulaMatcher(), FuzzyMatcher(), AcronymMatcher()]
 
     if settings.enable_embedding_matching:
@@ -41,6 +42,7 @@ def _default_match_pipeline(settings: Settings) -> MatchPipeline:
 
 
 def _build_llm_matcher(settings: Settings) -> LlmMatcher | None:
+    """Create the tier-6 LLM matcher when matching is enabled and configured."""
     if not settings.enable_llm_matching:
         return None
     if not settings.google_api_key:
@@ -61,6 +63,7 @@ def _build_llm_matcher(settings: Settings) -> LlmMatcher | None:
 
 
 def _build_llm_extraction_fallback(settings: Settings) -> LlmFallbackExtractor | None:
+    """Create the LLM extraction fallback when LLM features are enabled."""
     if not settings.enable_llm_matching:
         return None
     if not settings.google_api_key:
@@ -75,6 +78,7 @@ def _build_llm_extraction_fallback(settings: Settings) -> LlmFallbackExtractor |
 
 
 def _load_default_forbidden_list(settings: Settings) -> ForbiddenListRepository:
+    """Load the startup forbidden list from disk, or start empty if missing."""
     path = settings.default_forbidden_list_path
     if not path.is_file():
         logger.warning("Default forbidden list not found at %s; starting with an empty list.", path)
@@ -84,6 +88,7 @@ def _load_default_forbidden_list(settings: Settings) -> ForbiddenListRepository:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Initialize settings, optional DB, forbidden list, and matchers at startup."""
     settings = get_settings()
     app.state.settings = settings
 
@@ -100,6 +105,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    """Construct the FastAPI application with routes and exception handlers."""
     settings = get_settings()
     setup_logging(settings.log_level)
 

@@ -10,11 +10,13 @@ from app.infra.db.models import EvaluationRecord, ForbiddenListVersion
 
 class SqliteEvaluationRepository:
     def __init__(self, session: Session) -> None:
+        """Persist evaluations and forbidden-list versions in SQLite."""
         self._session = session
 
     def save_evaluation(
         self, result: EvaluationResult, *, product_id: str | None = None
     ) -> StoredEvaluation:
+        """Insert one evaluation result and return the stored record."""
         record = EvaluationRecord(
             product_id=product_id,
             product_name=result.product_name,
@@ -28,6 +30,7 @@ class SqliteEvaluationRepository:
         return _to_stored_evaluation(record)
 
     def list_evaluations(self, limit: int = 50, offset: int = 0) -> list[StoredEvaluation]:
+        """Return evaluation history newest-first with stable pagination."""
         # created_at alone isn't a unique sort key (concurrent writes can share
         # a timestamp); tie-break on id so offset pagination never skips or
         # duplicates rows.
@@ -41,12 +44,14 @@ class SqliteEvaluationRepository:
         return [_to_stored_evaluation(r) for r in records]
 
     def save_forbidden_list_version(self, entries: list[str]) -> None:
+        """Record a snapshot of the forbidden list after an upload."""
         version = ForbiddenListVersion(entries_json=json.dumps(entries))
         self._session.add(version)
         self._session.commit()
 
 
 def _to_stored_evaluation(record: EvaluationRecord) -> StoredEvaluation:
+    """Map a database row to the domain StoredEvaluation model."""
     return StoredEvaluation(
         id=record.id,
         product_id=record.product_id,

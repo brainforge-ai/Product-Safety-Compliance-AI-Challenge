@@ -43,10 +43,12 @@ def parse_csv_row(row: dict[str, str]) -> ExtractedProduct:
 
 
 def _normalize_key(key: str) -> str:
+    """Normalize a CSV header for case- and whitespace-insensitive lookup."""
     return re.sub(r"[\s_]+", " ", key.strip().lower())
 
 
 def _lookup(normalized_row: dict[str, str], field: str) -> str | None:
+    """Return the first non-empty alias value for a logical product field."""
     for alias in _FIELD_ALIASES[field]:
         alias_normalized = _normalize_key(alias)
         if alias_normalized in normalized_row:

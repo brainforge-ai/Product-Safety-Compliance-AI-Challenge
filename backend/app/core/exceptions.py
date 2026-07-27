@@ -2,22 +2,20 @@
 
 
 class AppError(Exception):
-    pass
+    """Base class for application errors mapped to HTTP responses."""
 
 
 class ExtractionError(AppError):
-    pass
+    """Raised when file content cannot be extracted."""
 
 
 class UnsupportedFileTypeError(ExtractionError):
-    pass
+    """Raised when a file type is not supported for evaluation."""
 
 
 class ParsingError(AppError):
-    pass
+    """Raised when structured product data cannot be parsed."""
 
 
 class MatchingError(AppError):
     """Reserved for deterministic tier failures; optional tiers fail open."""
-
-    pass

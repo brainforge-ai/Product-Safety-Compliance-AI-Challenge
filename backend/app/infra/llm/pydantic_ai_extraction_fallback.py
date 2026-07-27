@@ -37,12 +37,14 @@ class _ExtractedFields(BaseModel):
 
 class PydanticAiExtractionFallback:
     def __init__(self, settings: Settings) -> None:
+        """Configure a Gemini-backed agent for structured label extraction."""
         self._model_ref = strip_provider_prefix(settings.llm_model)
         provider = GoogleProvider(api_key=settings.google_api_key)
         model = GoogleModel(self._model_ref, provider=provider)
         self._agent = Agent(model, output_type=_ExtractedFields, system_prompt=_SYSTEM_PROMPT)
 
     async def extract(self, raw_text: str) -> LlmExtractionOutcome:
+        """Extract product fields and ingredients from unstructured label text."""
         result = await self._agent.run(raw_text)
         fields = result.output
         product = ExtractedProduct(
