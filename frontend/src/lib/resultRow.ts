@@ -1,4 +1,4 @@
-import type { BatchItemResult, EvaluationResult, LlmUsage, MatchResult } from '../api/types'
+import type { BatchItemResult, EvaluationResult, LlmUsage, MatchMethod, MatchResult } from '../api/types'
 
 // A single row for the Results table, unifying the two shapes the backend
 // returns (a bare EvaluationResult from /evaluate, a BatchItemResult -- which
@@ -55,4 +55,20 @@ export function fromBatchItem(item: BatchItemResult): ResultRow {
     matches: item.result.matches,
     llmUsage: item.result.llm_usage,
   }
+}
+
+// The method(s) that determined this row's result, at a glance -- without
+// having to expand the row. For a Rejected row this is the distinct set of
+// tiers behind its matches. For an Accepted row there is no match to read a
+// method off of; `llm_usage` is the only signal the LLM tier ran at all
+// (tiers 1-5 leave no trace on a clean product), so that's the only case we
+// can honestly report -- an Accepted row with no llm_usage shows no method.
+export function methodsUsed(row: ResultRow): MatchMethod[] {
+  if (row.matches.length > 0) {
+    return [...new Set(row.matches.map((match) => match.method))]
+  }
+  if (row.llmUsage) {
+    return ['llm']
+  }
+  return []
 }

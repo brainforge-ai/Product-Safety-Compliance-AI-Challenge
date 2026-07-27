@@ -1,4 +1,5 @@
 import type { MatchResult } from '../api/types'
+import { MethodBadge } from './MethodBadge'
 
 export function MatchList({ matches }: { matches: MatchResult[] }) {
   if (matches.length === 0) return null
@@ -14,9 +15,7 @@ export function MatchList({ matches }: { matches: MatchResult[] }) {
           <span className="font-medium text-neutral-800 dark:text-neutral-200">
             {match.forbidden_ingredient}
           </span>
-          <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs uppercase tracking-wide text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-            {match.method}
-          </span>
+          <MethodBadge method={match.method} />
           <span className="text-xs text-neutral-400">
             {Math.round(match.confidence * 100)}% confidence
           </span>

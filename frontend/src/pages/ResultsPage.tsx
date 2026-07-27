@@ -1,8 +1,9 @@
 import { Fragment, useState } from 'react'
 import { StatusBadge } from '../components/StatusBadge'
 import { MatchList } from '../components/MatchList'
+import { MethodBadge } from '../components/MethodBadge'
 import { LlmUsageSummary } from '../components/LlmUsageSummary'
-import type { ResultRow } from '../lib/resultRow'
+import { methodsUsed, type ResultRow } from '../lib/resultRow'
 
 export function ResultsPage({ results }: { results: ResultRow[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -34,6 +35,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
           <tr>
             <th className="px-4 py-2 font-medium">Source</th>
             <th className="px-4 py-2 font-medium">Status</th>
+            <th className="px-4 py-2 font-medium">Method</th>
             <th className="px-4 py-2 font-medium">Reason</th>
           </tr>
         </thead>
@@ -41,6 +43,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
           {results.map((row) => {
             const isOpen = expanded.has(row.key)
             const canExpand = row.matches.length > 0 || !!row.llmUsage
+            const methods = methodsUsed(row)
             return (
               <Fragment key={row.key}>
                 <tr
@@ -57,6 +60,17 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                   </td>
                   <td className="px-4 py-3 align-top">
                     <StatusBadge status={row.status} />
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {methods.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {methods.map((method) => (
+                          <MethodBadge key={method} method={method} />
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 align-top">
                     {row.status === 'Error' ? (
@@ -79,7 +93,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                 </tr>
                 {isOpen && (
                   <tr className="border-b border-neutral-100 bg-neutral-50/60 dark:border-neutral-900 dark:bg-neutral-900/40">
-                    <td colSpan={3} className="px-4 py-3">
+                    <td colSpan={4} className="px-4 py-3">
                       <MatchList matches={row.matches} />
                       {row.llmUsage && <LlmUsageSummary usage={row.llmUsage} />}
                     </td>
