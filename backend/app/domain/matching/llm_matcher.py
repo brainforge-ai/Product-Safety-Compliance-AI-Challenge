@@ -50,7 +50,12 @@ class LlmMatcher:
         forbidden_list: list[str],
         forbidden_list_version: str,
     ) -> LlmMatchOutcome:
-        """Match unresolved ingredients via LLM, using cache when possible."""
+        """Match ingredients the deterministic tiers missed, via LLM judgment.
+
+        Sends unresolved names plus the full forbidden list to the LLM, which
+        decides if two names refer to the same substance (synonyms, INCI names,
+        trade names). Results are cached per ingredient and list version.
+        """
         if not ingredients or not forbidden_list:
             return LlmMatchOutcome()
 

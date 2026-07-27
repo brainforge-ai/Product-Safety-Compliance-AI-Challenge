@@ -29,19 +29,23 @@ class PdfExtractor:
         """Extract text from a PDF, falling back to OCR when pages have no text."""
         try:
             with fitz.open(path) as doc:
+                # Fast path: use the embedded text layer when the PDF is not a scan.
                 text = "\n".join(page.get_text() for page in doc)
                 if text.strip():
                     return text
+                # Scanned PDFs have no text layer — rasterize each page and OCR instead.
                 return self._ocr_fallback(doc)
         except RuntimeError as exc:
             raise ExtractionError(f"Could not parse PDF file: {path}") from exc
 
     def _ocr_fallback(self, doc: fitz.Document) -> str:
         """OCR every page when the PDF contains no extractable text layer."""
+        # Scale up rasterization so Tesseract sees label-sized text, not tiny glyphs.
         matrix = fitz.Matrix(_OCR_ZOOM, _OCR_ZOOM)
         pages_text = []
         try:
             for page in doc:
+                # Render page pixels, then hand a PIL image to Tesseract.
                 pixmap = page.get_pixmap(matrix=matrix)
                 image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
                 pages_text.append(self._ocr_func(image))

@@ -17,7 +17,11 @@ class FuzzyMatcher:
         self._threshold = threshold
 
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
-        """Match when normalized strings exceed the fuzzy similarity threshold."""
+        """Match when normalized strings are highly similar but not identical.
+
+        Uses rapidfuzz character-level ratio on normalized text. Requires
+        score >= 90 to catch typos/OCR noise without matching distinct names.
+        """
         normalized_ingredient = normalize_text(ingredient)
         normalized_forbidden = normalize_text(forbidden_entry)
         if not normalized_ingredient or not normalized_forbidden:

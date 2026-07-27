@@ -67,29 +67,32 @@ async def evaluate_products_from_file(
         products = [parse_product_text(raw_text)]
         raw_texts = [raw_text]
 
+    # Optional LLM extraction: fill in ingredients when regex/CSV parsing found none.
     extraction_usages: list[LlmUsage | None] = [None] * len(products)
     if extraction_fallback is not None:
-        updated_products: list[ExtractedProduct] = []
-        for index, (product, text) in enumerate(zip(products, raw_texts, strict=True)):
+        for index in range(len(products)):
+            product = products[index]
             if not product.needs_llm_fallback:
-                updated_products.append(product)
                 continue
-            outcome = await extraction_fallback.extract(text, product)
-            updated_products.append(outcome.product)
+            outcome = await extraction_fallback.extract(raw_texts[index], product)
+            products[index] = outcome.product
             extraction_usages[index] = outcome.usage
-        products = updated_products
 
-    evaluations = [
-        ProductEvaluation(
-            product=product,
-            result=merge_llm_matches(decide(product, forbidden_list, pipeline), [], usage),
+    # Tiers 1–5: deterministic matching on whatever ingredients we have now.
+    evaluations: list[ProductEvaluation] = []
+    for index in range(len(products)):
+        product = products[index]
+        result = merge_llm_matches(
+            decide(product, forbidden_list, pipeline),
+            [],
+            extraction_usages[index],
         )
-        for product, usage in zip(products, extraction_usages, strict=True)
-    ]
+        evaluations.append(ProductEvaluation(product=product, result=result))
 
     if llm_matcher is None:
         return evaluations
 
+    # Tier 6: LLM match only ingredients still unmatched after tiers 1–5.
     resolved: list[ProductEvaluation] = []
     for item in evaluations:
         outcome = await llm_matcher.match_unresolved(

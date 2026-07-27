@@ -42,7 +42,12 @@ class EmbeddingMatcher:
         return self._embedding_cache[text]
 
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
-        """Match when embedding cosine similarity exceeds the threshold."""
+        """Match when sentence embeddings are semantically close.
+
+        Encodes both normalized strings, then compares cosine similarity.
+        Skips formula-shaped text (tier 2 handles those). Requires similarity
+        >= 0.90 to match synonyms without false positives on unrelated names.
+        """
         if is_formula(ingredient) or is_formula(forbidden_entry):
             return None
 

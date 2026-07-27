@@ -6,7 +6,11 @@ from app.domain.normalization.text_normalizer import normalize_text
 
 class ExactMatcher:
     def match(self, ingredient: str, forbidden_entry: str) -> MatchResult | None:
-        """Match when normalized ingredient text equals the forbidden entry."""
+        """Match when both strings are equal after normalization.
+
+        Strips case, punctuation, and whitespace (NFKC + casefold) so
+        e.g. "Coumarin" and "COUMARIN" are treated as the same substance.
+        """
         normalized_ingredient = normalize_text(ingredient)
         if not normalized_ingredient:
             return None
