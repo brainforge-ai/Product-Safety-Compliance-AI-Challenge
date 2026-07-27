@@ -59,6 +59,7 @@ class LlmMatcher:
         if not ingredients or not forbidden_list:
             return LlmMatchOutcome()
 
+        # Formulas are handled by tier 2; LLMs can false-match chemical notation.
         candidates = [ingredient for ingredient in ingredients if not is_formula(ingredient)]
         non_formula_forbidden = [entry for entry in forbidden_list if not is_formula(entry)]
         if not candidates or not non_formula_forbidden:
@@ -66,6 +67,7 @@ class LlmMatcher:
 
         results_by_ingredient: dict[str, MatchResult | None] = {}
         to_query: list[str] = []
+        # Split cache hits from ingredients that still need an LLM call.
         for ingredient in candidates:
             hit, cached = self._cache.get(normalize_text(ingredient), forbidden_list_version)
             if hit:
@@ -80,6 +82,7 @@ class LlmMatcher:
             )
             results_by_ingredient.update(queried)
 
+        # Preserve caller ingredient order; skip formulas and non-matches.
         matches = [
             result
             for ingredient in ingredients
@@ -94,6 +97,7 @@ class LlmMatcher:
         forbidden_list_version: str,
     ) -> tuple[dict[str, MatchResult | None], LlmUsage | None]:
         """Call the LLM for uncached ingredients and store results in cache."""
+        # Every queried ingredient gets an entry, even when the LLM finds no match.
         results: dict[str, MatchResult | None] = dict.fromkeys(ingredients)
 
         try:
@@ -103,11 +107,13 @@ class LlmMatcher:
             )
         except Exception as exc:  # noqa: BLE001 - fail open, an LLM outage must never break evaluation
             logger.warning("LLM matching tier failed open: %s", exc)
+            # Cache None so repeated failures don't hammer the LLM.
             for ingredient in ingredients:
                 self._cache.set(normalize_text(ingredient), forbidden_list_version, None)
             return results, None
 
         for match in client_result.matches:
+            # Reject pairs the LLM invented that weren't in the request.
             if (
                 match.ingredient not in ingredients
                 or match.forbidden_ingredient not in forbidden_list
@@ -120,6 +126,7 @@ class LlmMatcher:
                 confidence=match.confidence,
             )
 
+        # Store both matches and explicit non-matches for future cache lookups.
         for ingredient in ingredients:
             self._cache.set(normalize_text(ingredient), forbidden_list_version, results[ingredient])
         return results, client_result.usage
