@@ -57,18 +57,9 @@ export function fromBatchItem(item: BatchItemResult): ResultRow {
   }
 }
 
-// The method(s) that determined this row's result, at a glance -- without
-// having to expand the row. For a Rejected row this is the distinct set of
-// tiers behind its matches. For an Accepted row there is no match to read a
-// method off of; `llm_usage` is the only signal the LLM tier ran at all
-// (tiers 1-5 leave no trace on a clean product), so that's the only case we
-// can honestly report -- an Accepted row with no llm_usage shows no method.
+// The method(s) that produced a forbidden-ingredient match for this row.
+// LLM usage alone is deliberately not a method: the model may have checked
+// unresolved ingredients without contributing any match to the decision.
 export function methodsUsed(row: ResultRow): MatchMethod[] {
-  if (row.matches.length > 0) {
-    return [...new Set(row.matches.map((match) => match.method))]
-  }
-  if (row.llmUsage) {
-    return ['llm']
-  }
-  return []
+  return [...new Set(row.matches.map((match) => match.method))]
 }

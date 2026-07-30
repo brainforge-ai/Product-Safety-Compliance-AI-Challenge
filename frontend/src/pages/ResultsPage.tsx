@@ -35,7 +35,7 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
           <tr>
             <th className="px-4 py-2 font-medium">Source</th>
             <th className="px-4 py-2 font-medium">Status</th>
-            <th className="px-4 py-2 font-medium">Method</th>
+            <th className="px-4 py-2 font-medium">Matched by</th>
             <th className="px-4 py-2 font-medium">Reason</th>
           </tr>
         </thead>
@@ -95,7 +95,12 @@ export function ResultsPage({ results }: { results: ResultRow[] }) {
                   <tr className="border-b border-neutral-100 bg-neutral-50/60 dark:border-neutral-900 dark:bg-neutral-900/40">
                     <td colSpan={4} className="px-4 py-3">
                       <MatchList matches={row.matches} />
-                      {row.llmUsage && <LlmUsageSummary usage={row.llmUsage} />}
+                      {row.llmUsage && (
+                        <LlmUsageSummary
+                          usage={row.llmUsage}
+                          hasLlmMatch={row.matches.some((match) => match.method === 'llm')}
+                        />
+                      )}
                     </td>
                   </tr>
                 )}
