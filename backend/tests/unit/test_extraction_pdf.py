@@ -79,6 +79,29 @@ def test_ocr_fallback_uses_injected_ocr_func(tmp_path: Path) -> None:
     assert len(calls) == 1
 
 
+def test_mixed_pdf_ocrs_only_pages_without_a_text_layer(tmp_path: Path) -> None:
+    doc = fitz.open()
+    text_page = doc.new_page()
+    text_page.insert_text((72, 72), "Product Name: Mixed Label")
+    scan_page = doc.new_page()
+    scan_page.insert_image(scan_page.rect, stream=_blank_png())
+    pdf_path = tmp_path / "mixed.pdf"
+    doc.save(pdf_path)
+    doc.close()
+
+    calls: list[object] = []
+
+    def fake_ocr(image: object) -> str:
+        calls.append(image)
+        return "Ingredients: Water, Coumarin"
+
+    text = PdfExtractor(ocr_func=fake_ocr).extract(pdf_path)
+
+    assert "Product Name: Mixed Label" in text
+    assert "Ingredients: Water, Coumarin" in text
+    assert len(calls) == 1
+
+
 def _blank_png() -> bytes:
     doc = fitz.open()
     page = doc.new_page(width=100, height=100)

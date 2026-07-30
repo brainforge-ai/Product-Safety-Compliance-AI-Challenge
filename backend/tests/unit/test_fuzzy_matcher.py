@@ -22,6 +22,10 @@ def test_does_not_match_unrelated_ingredients() -> None:
     assert FuzzyMatcher().match("Water", "Triclosan") is None
 
 
+def test_never_fuzzy_matches_distinct_long_formulas() -> None:
+    assert FuzzyMatcher().match("C100H200O2", "C100H200O3") is None
+
+
 def test_custom_threshold_is_respected() -> None:
     lenient = FuzzyMatcher(threshold=50.0)
     result = lenient.match("Sodium Laureth Sulfate", "Sodium Lauryl Sulfate")

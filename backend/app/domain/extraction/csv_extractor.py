@@ -10,7 +10,7 @@ class CsvExtractor:
     def extract(self, path: Path) -> list[dict[str, str]]:
         """Read a CSV file and return one dict per row."""
         try:
-            with path.open(newline="", encoding="utf-8") as f:
+            with path.open(newline="", encoding="utf-8-sig") as f:
                 return list(csv.DictReader(f))
-        except OSError as exc:
+        except (OSError, csv.Error) as exc:
             raise ExtractionError(f"Could not read CSV file: {path}") from exc

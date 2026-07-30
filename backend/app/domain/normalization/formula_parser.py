@@ -1,59 +1,117 @@
-"""Parse flat chemical formulas into order-independent element counts.
+"""Parse molecular formulas into order-independent element counts.
 
-OCR corruption recovery is handled by formula_matcher, not here.
+Supports flat formulas, grouped formulas such as ``Ca(OH)2``, and hydrate
+notation such as ``CuSO4·5H2O``. OCR corruption recovery remains the formula
+matcher's responsibility rather than being guessed here.
 """
 
 import re
+from functools import lru_cache
 
 from app.domain.normalization.elements import ELEMENT_SYMBOLS
 
-_TOKEN_RE = re.compile(r"([A-Z][a-z]?)(\d*)")
-_UNSUPPORTED_CHARS_RE = re.compile(r"[\s().]")
+_ELEMENT_RE = re.compile(r"[A-Z][a-z]?")
+_COUNT_RE = re.compile(r"\d+")
+_UNSUPPORTED_CHARS_RE = re.compile(r"[\s{}]")
+_OPEN_TO_CLOSE = {"(": ")", "[": "]"}
 
 
-def parse_formula(text: str) -> dict[str, int] | None:
-    """Strictly parse a flat molecular formula string.
+class _FormulaParser:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.pos = 0
 
-    Returns None if the text contains unsupported syntax (whitespace,
-    parentheses, hydrate dots) or any token that isn't a recognized element
-    symbol, or if the string isn't fully consumed by element/count tokens.
-    """
+    def parse(self, closing: str | None = None) -> dict[str, int] | None:
+        counts: dict[str, int] = {}
+        consumed = False
+
+        while self.pos < len(self.text):
+            char = self.text[self.pos]
+            if closing and char == closing:
+                break
+            if char in ")]":
+                return None
+
+            if char in _OPEN_TO_CLOSE:
+                self.pos += 1
+                nested = self.parse(_OPEN_TO_CLOSE[char])
+                if nested is None or self.pos >= len(self.text):
+                    return None
+                self.pos += 1  # closing bracket
+                multiplier = self._count()
+                for element, count in nested.items():
+                    counts[element] = counts.get(element, 0) + count * multiplier
+                consumed = True
+                continue
+
+            match = _ELEMENT_RE.match(self.text, self.pos)
+            if match is None or match.group() not in ELEMENT_SYMBOLS:
+                return None
+            self.pos = match.end()
+            element = match.group()
+            counts[element] = counts.get(element, 0) + self._count()
+            consumed = True
+
+        if closing and (self.pos >= len(self.text) or self.text[self.pos] != closing):
+            return None
+        return counts if consumed else None
+
+    def _count(self) -> int:
+        match = _COUNT_RE.match(self.text, self.pos)
+        if match is None:
+            return 1
+        self.pos = match.end()
+        return int(match.group())
+
+
+def _parse_component(component: str) -> dict[str, int] | None:
+    """Parse one side of a hydrate dot, including an optional coefficient."""
+    coefficient = 1
+    coefficient_match = _COUNT_RE.match(component)
+    if coefficient_match:
+        coefficient = int(coefficient_match.group())
+        component = component[coefficient_match.end() :]
+    if not component:
+        return None
+
+    parser = _FormulaParser(component)
+    counts = parser.parse()
+    if counts is None or parser.pos != len(component):
+        return None
+    return {element: count * coefficient for element, count in counts.items()}
+
+
+@lru_cache(maxsize=8192)
+def _canonical_formula(text: str) -> tuple[tuple[str, int], ...] | None:
     candidate = text.strip()
     if not candidate or _UNSUPPORTED_CHARS_RE.search(candidate):
         return None
 
-    counts: dict[str, int] = {}
-    pos = 0
-    while pos < len(candidate):
-        match = _TOKEN_RE.match(candidate, pos)
-        if not match or not match.group(1):
+    total: dict[str, int] = {}
+    for component in re.split(r"[.·]", candidate):
+        counts = _parse_component(component)
+        if counts is None:
             return None
-        element, count_str = match.groups()
-        if element not in ELEMENT_SYMBOLS:
-            return None
-        counts[element] = counts.get(element, 0) + (int(count_str) if count_str else 1)
-        pos = match.end()
+        for element, count in counts.items():
+            total[element] = total.get(element, 0) + count
+    return tuple(sorted(total.items())) or None
 
-    return counts or None
+
+def parse_formula(text: str) -> dict[str, int] | None:
+    """Parse a molecular formula, returning total element counts or ``None``."""
+    canonical = _canonical_formula(text)
+    return dict(canonical) if canonical is not None else None
 
 
 def is_formula(text: str) -> bool:
-    """Heuristic: does this text look like a (possibly OCR-corrupted) flat
-    molecular formula, as opposed to an ingredient name?
-
-    Deliberately permissive rather than chemically strict: a corrupted
-    formula like `H202` still parses successfully here (as `H:202`), which
-    is intentional so it routes into the formula-matching tier rather than
-    being treated as a plain name.
-    """
-    return parse_formula(text) is not None
+    """Return whether text looks like a formula, including common OCR damage."""
+    return (
+        _canonical_formula(text) is not None
+        or _canonical_formula(text.replace("€", "C")) is not None
+    )
 
 
 def formulas_equal(a: str, b: str) -> bool:
-    """Order-independent equality between two formula strings, e.g. `H2O2`
-    equals `O2H2`. Returns False if either side doesn't parse as a formula.
-    """
-    parsed_a = parse_formula(a)
-    if parsed_a is None:
-        return False
-    return parsed_a == parse_formula(b)
+    """Return order-independent molecular-formula equality."""
+    parsed_a = _canonical_formula(a)
+    return parsed_a is not None and parsed_a == _canonical_formula(b)

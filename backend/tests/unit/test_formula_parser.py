@@ -40,12 +40,15 @@ def test_rejects_digit_led_ingredient_name() -> None:
     assert is_formula("1,4-Dioxane") is False
 
 
-def test_known_limitation_nested_parentheses_unsupported() -> None:
-    assert parse_formula("Mg(OH)2") is None
+def test_parses_nested_parentheses() -> None:
+    assert parse_formula("Mg(OH)2") == {"Mg": 1, "O": 2, "H": 2}
+    assert formulas_equal("Ca(OH)2", "CaO2H2") is True
 
 
-def test_known_limitation_hydrate_notation_unsupported() -> None:
-    assert parse_formula("CuSO4.5H2O") is None
+def test_parses_hydrate_notation() -> None:
+    expected = {"Cu": 1, "S": 1, "O": 9, "H": 10}
+    assert parse_formula("CuSO4.5H2O") == expected
+    assert parse_formula("CuSO4·5H2O") == expected
 
 
 def test_ocr_corrupted_formula_is_still_formula_shaped_but_parses_wrong() -> None:

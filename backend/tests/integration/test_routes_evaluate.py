@@ -32,9 +32,7 @@ def test_evaluate_all_30_samples_matches_the_ledger(
         path = fixtures_dir / row["filename"]
         content_type = _CONTENT_TYPES[path.suffix.lower()]
         with path.open("rb") as fh:
-            response = client.post(
-                "/api/evaluate", files={"files": (path.name, fh, content_type)}
-            )
+            response = client.post("/api/evaluate", files={"files": (path.name, fh, content_type)})
 
         assert response.status_code == 200, response.text
         body = response.json()
@@ -64,9 +62,7 @@ def test_evaluate_multi_row_csv_returns_the_batch_shape(client: TestClient) -> N
     # A single multi-row CSV can't fit the single-object README contract, so
     # /evaluate falls back to the batch shape rather than erroring.
     csv_body = b"Product Name,Ingredients\nA,Water\nB,Coumarin\n"
-    response = client.post(
-        "/api/evaluate", files={"files": ("products.csv", csv_body, "text/csv")}
-    )
+    response = client.post("/api/evaluate", files={"files": ("products.csv", csv_body, "text/csv")})
 
     assert response.status_code == 200
     body = response.json()
@@ -80,9 +76,7 @@ def test_evaluate_multi_row_csv_returns_the_batch_shape(client: TestClient) -> N
 
 def test_evaluate_accepts_a_single_row_csv(client: TestClient) -> None:
     csv_body = b"Product Name,Ingredients\nSynthetic Serum,Water;Glycerin\n"
-    response = client.post(
-        "/api/evaluate", files={"files": ("product.csv", csv_body, "text/csv")}
-    )
+    response = client.post("/api/evaluate", files={"files": ("product.csv", csv_body, "text/csv")})
 
     assert response.status_code == 200
     body = response.json()
@@ -150,3 +144,27 @@ def test_evaluate_with_no_files_returns_422() -> None:
         response = client.post("/api/evaluate", files=[])
 
     assert response.status_code == 422
+
+
+def test_evaluate_rejects_an_upload_over_the_configured_limit(client: TestClient) -> None:
+    client.app.state.settings.max_upload_bytes = 8
+
+    response = client.post(
+        "/api/evaluate",
+        files={"files": ("product.txt", b"123456789", "text/plain")},
+    )
+
+    assert response.status_code == 413
+    assert "8-byte limit" in response.json()["detail"]
+
+
+def test_evaluate_rejects_too_many_files(client: TestClient) -> None:
+    client.app.state.settings.max_upload_files = 1
+    files = [
+        ("files", ("one.txt", b"Ingredients: Water", "text/plain")),
+        ("files", ("two.txt", b"Ingredients: Water", "text/plain")),
+    ]
+
+    response = client.post("/api/evaluate", files=files)
+
+    assert response.status_code == 413

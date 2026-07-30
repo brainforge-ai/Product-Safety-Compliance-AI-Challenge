@@ -11,7 +11,7 @@ from app.api.routes_forbidden_list import router as forbidden_list_router
 from app.api.routes_health import router as health_router
 from app.api.routes_products import router as products_router
 from app.core.config import Settings, get_settings
-from app.core.exceptions import AppError, UnsupportedFileTypeError
+from app.core.exceptions import AppError, UnsupportedFileTypeError, UploadTooLargeError
 from app.core.logging import setup_logging
 from app.domain.forbidden_list.repository import ForbiddenListRepository
 from app.domain.matching.acronym_matcher import AcronymMatcher
@@ -125,6 +125,10 @@ def create_app() -> FastAPI:
     app.include_router(evaluate_router, prefix="/api", tags=["evaluate"])
     app.include_router(forbidden_list_router, prefix="/api", tags=["forbidden-ingredients"])
     app.include_router(products_router, prefix="/api", tags=["products"])
+
+    @app.exception_handler(UploadTooLargeError)
+    async def _handle_upload_too_large(request, exc: UploadTooLargeError):
+        return JSONResponse(status_code=413, content={"detail": str(exc)})
 
     # UnsupportedFileTypeError must register before AppError (415 vs 422).
     @app.exception_handler(UnsupportedFileTypeError)

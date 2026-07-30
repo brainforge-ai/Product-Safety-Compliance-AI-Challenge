@@ -138,3 +138,11 @@ This also **changed** the multi-row-CSV behavior: previously a lone multi-row CS
 **Regression-guarded in the automated suite, not just live-tested.** Added `test_llm_tier_catches_a_naming_variant_against_the_real_forbidden_list` to `test_routes_evaluate_llm.py`, extending the existing mocked `_FakeLlmClient` with the new pair rather than spending real credits in the committed suite. Full suite: 180 passed (was 179), `ruff check .` clean.
 
 **Cleanup:** restored `ENABLE_LLM_MATCHING=false` and restarted the dev server, restored the real forbidden list via the same live UI flow (confirmed via the running app, not just assumed), closed the browser session.
+
+---
+
+## Final pre-demo accuracy and performance audit
+
+The final audit concentrated on held-out-format accuracy and real-process behavior. It fixed ordinary `Ingredients:` / `Ingredient List:` headers, inline and comma-delimited lists (without splitting `1,4-Dioxane` or commas inside parentheses), per-page OCR for mixed text/scanned PDFs, grouped/hydrate formula canonicalization, and formula exclusion from fuzzy matching. A parser miss now returns `422` instead of silently becoming `Accepted`. Optional-feature flags are isolated from the developer's `.env` during tests, and transient LLM failures are no longer cached as permanent negative verdicts.
+
+**Verification:** 190 backend tests pass offline; Ruff lint, dependency consistency, bytecode compilation, frontend TypeScript production build, frontend lint, and offline npm runtime audit pass. A real Uvicorn process returned all 30 sample decisions in ~0.46 seconds per batch with 0 errors and 0 ledger mismatches across five byte-identical sequential runs. Four simultaneous 30-product requests also completed with 0 mismatches. Live multipart checks covered PDF + image + text together, common ingredient headers, comma-delimited CSV, grouped formulas, long-formula false-positive resistance, unsupported types, and fail-closed unparseable input. One final real Gemini request caught `D-Glucopyranose` against `Glucose` at confidence 1.0 (375 tokens); the identical repeat returned in ~2 ms from cache with no new usage.

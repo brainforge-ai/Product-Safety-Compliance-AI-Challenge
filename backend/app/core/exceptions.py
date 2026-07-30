@@ -17,5 +17,9 @@ class ParsingError(AppError):
     """Raised when structured product data cannot be parsed."""
 
 
+class UploadTooLargeError(AppError):
+    """Raised when an uploaded payload exceeds a configured resource bound."""
+
+
 class MatchingError(AppError):
     """Reserved for deterministic tier failures; optional tiers fail open."""

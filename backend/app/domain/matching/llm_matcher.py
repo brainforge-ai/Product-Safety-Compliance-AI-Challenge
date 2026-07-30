@@ -107,9 +107,8 @@ class LlmMatcher:
             )
         except Exception as exc:  # noqa: BLE001 - fail open, an LLM outage must never break evaluation
             logger.warning("LLM matching tier failed open: %s", exc)
-            # Cache None so repeated failures don't hammer the LLM.
-            for ingredient in ingredients:
-                self._cache.set(normalize_text(ingredient), forbidden_list_version, None)
+            # A transient outage is not a genuine "no match" verdict. Caching
+            # it would silently suppress a real match until process restart.
             return results, None
 
         for match in client_result.matches:

@@ -38,3 +38,15 @@ def test_different_forbidden_list_versions_are_independent() -> None:
     hit, result = cache.get("coumarin", "v2")
     assert hit is False
     assert result is None
+
+
+def test_cache_is_bounded_and_evicts_least_recently_used_entry() -> None:
+    cache = LlmResponseCache(max_entries=2)
+    cache.set("a", "v1", None)
+    cache.set("b", "v1", None)
+    cache.get("a", "v1")
+    cache.set("c", "v1", None)
+
+    assert cache.get("a", "v1")[0] is True
+    assert cache.get("b", "v1")[0] is False
+    assert cache.get("c", "v1")[0] is True

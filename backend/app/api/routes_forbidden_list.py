@@ -2,8 +2,13 @@
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
-from app.api.deps import get_evaluation_repository, get_forbidden_list_repository
+from app.api.deps import (
+    get_evaluation_repository,
+    get_forbidden_list_repository,
+    get_settings_dep,
+)
 from app.api.schemas.forbidden_list import ForbiddenListResponse
+from app.core.config import Settings
 from app.core.exceptions import ParsingError
 from app.domain.forbidden_list.repository import ForbiddenListRepository
 from app.domain.persistence.base import EvaluationRepository
@@ -25,10 +30,16 @@ async def replace_forbidden_ingredients(
     file: UploadFile,
     repository: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     evaluation_repository: EvaluationRepository = Depends(get_evaluation_repository),
+    settings: Settings = Depends(get_settings_dep),
 ) -> ForbiddenListResponse:
     """Replace the forbidden list from an uploaded CSV file."""
     try:
-        entries = await replace_forbidden_list_from_upload(file, repository, evaluation_repository)
+        entries = await replace_forbidden_list_from_upload(
+            file,
+            repository,
+            evaluation_repository,
+            max_bytes=settings.max_upload_bytes,
+        )
     except ParsingError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

@@ -1,6 +1,6 @@
-# Architecture & Planning: Product Safety Compliance AI System
+# Architecture: Product Safety Compliance AI System
 
-> Status: **Draft for iteration**, not yet implemented. This document captures the system design decisions before writing code.
+> Status: **Implemented and validated.** This document records both the final design and the tradeoffs discovered during implementation.
 
 ## 1. Problem Restatement
 
@@ -294,7 +294,7 @@ Response contract preserves the exact shape from the challenge README, with addi
 | Embeddings (optional tier) | `sentence-transformers` (MiniLM) | Fully offline semantic generalization, no network/API cost |
 | LLM provider abstraction | Pydantic AI, model `google:gemini-3.1-flash-lite` | Native Gemini support via Google's official `google-genai` SDK, validated structured output via `output_type`, maintained by the Pydantic org (already a trusted core dependency). Chosen over LiteLLM specifically due to LiteLLM's March 2026 supply chain compromise (see Section 7) |
 | Database | SQLite via SQLModel, toggleable via `ENABLE_PERSISTENCE` | Zero external infra to stand up; swapping to Postgres later is a connection-string change |
-| Cache | `diskcache` or a dedicated SQLite table | Persists extraction + LLM/embedding results across restarts, avoids recomputation and repeat Gemini spend |
+| Cache | Bounded in-memory LRU + per-matcher caches | Caches normalized strings, embeddings, and positive/negative LLM verdicts without unbounded process-memory growth; LLM keys include the forbidden-list version |
 | Lint/format | Ruff | Single fast tool covering both linting and formatting |
 | Testing | pytest + FastAPI `TestClient` | Standard, well-integrated |
 | Frontend | Vite + React + TypeScript + TanStack Query + Tailwind CSS | Lean, fast dev loop, no heavyweight framework overhead |
@@ -302,12 +302,12 @@ Response contract preserves the exact shape from the challenge README, with addi
 
 ## 12. Performance & Robustness Notes
 
-- Blocking work (OCR, PDF parsing) runs via FastAPI's threadpool so the event loop is never blocked; the batch endpoint uses a bounded `asyncio.Semaphore` to cap concurrency.
-- Extraction results are cached by file content hash; a given file is never OCR'd/parsed twice.
-- LLM/embedding match results are cached by `(normalized_ingredient, forbidden_list_version)`, avoiding repeat cost and keeping results stable across reruns.
+- Blocking extraction and matching work runs via FastAPI's threadpool; the batch endpoint uses a bounded `asyncio.Semaphore` to cap concurrency.
+- Normalization/formula parsing and embedding vectors are cached in process. LLM verdicts use a bounded LRU keyed by `(normalized_ingredient, forbidden_list_version)` to avoid repeat spend while preventing unbounded growth.
+- Upload byte/file counts, PDF pages, image pixels, CSV rows, and ingredient counts are bounded so malformed inputs cannot consume resources without limit.
 - Per-file error isolation in batch mode: one corrupt/unsupported file must not fail the entire batch.
-- Gemini calls carry timeouts and fail open to the rule-based result rather than erroring the whole request. The system must degrade gracefully, not catastrophically, when the LLM tier is unavailable or slow.
-- Heavy models (embedding model, OCR engine) are loaded once at app startup (FastAPI lifespan), not per-request.
+- Gemini matching calls carry timeouts and fail open to the rule-based result. Extraction failures do not produce a false `Accepted`; if no ingredient list can be recovered, evaluation returns a parsing error.
+- The optional embedding model is loaded once at startup, not per request. Tesseract remains an external OCR process invoked only when image input or a scan-only PDF page requires it.
 
 ## 13. Testing Strategy
 

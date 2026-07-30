@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi.concurrency import run_in_threadpool
 
-from app.core.exceptions import AppError
+from app.core.exceptions import AppError, ParsingError
 from app.domain.decision.engine import decide, merge_llm_matches, unresolved_ingredients
 from app.domain.extraction.base import Extractor
 from app.domain.extraction.csv_extractor import CsvExtractor
@@ -32,6 +32,8 @@ _EXTRACTORS: dict[FileType, Extractor] = {
 }
 
 DEFAULT_BATCH_CONCURRENCY = 8
+MAX_PRODUCTS_PER_CSV = 1000
+MAX_INGREDIENTS_PER_PRODUCT = 1000
 
 
 def _csv_row_as_text(row: dict[str, str]) -> str:
@@ -61,6 +63,10 @@ async def evaluate_products_from_file(
 
     if file_type == FileType.CSV:
         rows = await run_in_threadpool(CsvExtractor().extract, path)
+        if not rows:
+            raise ParsingError("CSV contains no product rows")
+        if len(rows) > MAX_PRODUCTS_PER_CSV:
+            raise ParsingError(f"CSV contains {len(rows)} rows; maximum is {MAX_PRODUCTS_PER_CSV}.")
         products = [parse_csv_row(row) for row in rows]
         raw_texts = [_csv_row_as_text(row) for row in rows]
     else:
@@ -79,12 +85,32 @@ async def evaluate_products_from_file(
             products[index] = outcome.product
             extraction_usages[index] = outcome.usage
 
+    too_large = [
+        product.product_name
+        for product in products
+        if len(product.ingredients) > MAX_INGREDIENTS_PER_PRODUCT
+    ]
+    if too_large:
+        raise ParsingError(
+            f"Ingredient list for {too_large[0]} exceeds the "
+            f"{MAX_INGREDIENTS_PER_PRODUCT}-ingredient limit."
+        )
+
+    unresolved = [product.product_name for product in products if not product.ingredients]
+    if unresolved:
+        names = ", ".join(unresolved[:3])
+        raise ParsingError(
+            f"Could not extract an ingredient list for {names}. "
+            "Use an Ingredients header or enable the LLM extraction fallback."
+        )
+
     # Tiers 1–5: deterministic matching on whatever ingredients we have now.
     evaluations: list[ProductEvaluation] = []
     for index in range(len(products)):
         product = products[index]
+        deterministic_result = await run_in_threadpool(decide, product, forbidden_list, pipeline)
         result = merge_llm_matches(
-            decide(product, forbidden_list, pipeline),
+            deterministic_result,
             [],
             extraction_usages[index],
         )

@@ -7,6 +7,9 @@ usage/cost it reports should end up on the final `EvaluationResult`.
 
 from pathlib import Path
 
+import pytest
+
+from app.core.exceptions import ParsingError
 from app.domain.matching.exact_matcher import ExactMatcher
 from app.domain.matching.pipeline import MatchPipeline
 from app.domain.models import ExtractedProduct, LlmUsage
@@ -99,7 +102,7 @@ async def test_product_that_did_not_need_fallback_is_never_sent_to_the_llm(
     assert evaluation.result.llm_usage is None
 
 
-async def test_fallback_failure_leaves_the_product_with_zero_ingredients(
+async def test_fallback_failure_raises_instead_of_false_accepting(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "product.txt"
@@ -111,10 +114,7 @@ async def test_fallback_failure_leaves_the_product_with_zero_ingredients(
 
     extractor = LlmFallbackExtractor(ErroringClient())
 
-    [evaluation] = await evaluate_products_from_file(
-        path, ["Coumarin"], PIPELINE, extraction_fallback=extractor
-    )
-
-    assert evaluation.product.ingredients == []
-    assert evaluation.result.status == "Accepted"
-    assert evaluation.result.llm_usage is None
+    with pytest.raises(ParsingError, match="Could not extract an ingredient list"):
+        await evaluate_products_from_file(
+            path, ["Coumarin"], PIPELINE, extraction_fallback=extractor
+        )

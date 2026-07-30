@@ -69,6 +69,8 @@ The app runs correctly with the defaults in `.env.example` - every AI feature is
 | `ENABLE_EMBEDDING_MATCHING` | `false` | Tier 5 (local semantic match) |
 | `ENABLE_PERSISTENCE` | `false` | `GET /api/products` evaluation history |
 | `DATABASE_URL` | `sqlite:///./data/app.db` | - |
+| `MAX_UPLOAD_BYTES` | `10485760` | Per-file upload limit (10 MiB) |
+| `MAX_UPLOAD_FILES` | `20` | Maximum files in one evaluation request |
 | `DEFAULT_FORBIDDEN_LIST_PATH` | repo-root `forbidden_ingredients.csv` | Only set if relocating the dataset |
 | `SAMPLE_DATA_DIR` | repo root | Only set if relocating the dataset |
 

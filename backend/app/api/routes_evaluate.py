@@ -20,6 +20,7 @@ from app.api.deps import (
 )
 from app.api.schemas.evaluate import BatchEvaluationResponse, BatchItemResult, EvaluateByPathRequest
 from app.core.config import Settings
+from app.core.exceptions import UploadTooLargeError
 from app.domain.forbidden_list.repository import ForbiddenListRepository
 from app.domain.matching.llm_matcher import LlmMatcher
 from app.domain.matching.pipeline import MatchPipeline
@@ -39,7 +40,8 @@ router = APIRouter()
 @contextmanager
 def _staged_upload(upload: UploadFile) -> Iterator[Path]:
     """Write an upload to a temp file and delete it when the context exits."""
-    suffix = Path(upload.filename or "").suffix
+    # Bound an attacker-controlled suffix before passing it to mkstemp.
+    suffix = Path(upload.filename or "").suffix.lower()[-16:]
     fd, name = tempfile.mkstemp(suffix=suffix)
     os.close(fd)
     path = Path(name)
@@ -49,10 +51,17 @@ def _staged_upload(upload: UploadFile) -> Iterator[Path]:
         path.unlink(missing_ok=True)
 
 
-async def _write_upload(upload: UploadFile, path: Path) -> None:
-    """Persist uploaded bytes to a staged file on disk."""
-    content = await upload.read()
-    await run_in_threadpool(path.write_bytes, content)
+async def _write_upload(upload: UploadFile, path: Path, *, max_bytes: int) -> None:
+    """Stream an upload to disk with a hard byte limit."""
+    total = 0
+    with path.open("wb") as destination:
+        while chunk := await upload.read(1024 * 1024):
+            total += len(chunk)
+            if total > max_bytes:
+                raise UploadTooLargeError(
+                    f"Upload {upload.filename or 'file'} exceeds the {max_bytes:,}-byte limit."
+                )
+            await run_in_threadpool(destination.write, chunk)
 
 
 def _resolve_within(base: Path, relative: str) -> Path:
@@ -66,9 +75,7 @@ def _resolve_within(base: Path, relative: str) -> Path:
     return candidate
 
 
-def _single_result(
-    items: list[ProductEvaluation], *, source: str
-) -> ProductEvaluation:
+def _single_result(items: list[ProductEvaluation], *, source: str) -> ProductEvaluation:
     """Require exactly one product from a by-path evaluation."""
     if len(items) != 1:
         raise HTTPException(
@@ -84,6 +91,7 @@ def _single_result(
 @router.post("/evaluate", response_model=EvaluationResult | BatchEvaluationResponse)
 async def evaluate(
     files: list[UploadFile],
+    settings: Settings = Depends(get_settings_dep),
     forbidden_repo: ForbiddenListRepository = Depends(get_forbidden_list_repository),
     pipeline: MatchPipeline = Depends(get_match_pipeline),
     evaluation_repo: EvaluationRepository = Depends(get_evaluation_repository),
@@ -91,14 +99,18 @@ async def evaluate(
     extraction_fallback: LlmFallbackExtractor | None = Depends(get_llm_extraction_fallback),
 ) -> EvaluationResult | BatchEvaluationResponse:
     """Returns single EvaluationResult or batch shape depending on product count."""
-    forbidden_list = forbidden_repo.get_all()
-    forbidden_list_version = forbidden_repo.version_hash()
+    if len(files) > settings.max_upload_files:
+        raise UploadTooLargeError(
+            f"At most {settings.max_upload_files} files may be evaluated per request."
+        )
+
+    forbidden_list, forbidden_list_version = forbidden_repo.snapshot()
 
     with ExitStack() as stack:
         staged: list[tuple[str, Path]] = []
         for upload in files:
             path = stack.enter_context(_staged_upload(upload))
-            await _write_upload(upload, path)
+            await _write_upload(upload, path, max_bytes=settings.max_upload_bytes)
             staged.append((upload.filename or "uploaded file", path))
 
         if len(staged) == 1:
@@ -150,13 +162,14 @@ async def evaluate_by_path(
     if not resolved.is_file():
         raise HTTPException(status_code=404, detail=f"No such file: {body.path}")
 
+    forbidden_list, forbidden_list_version = forbidden_repo.snapshot()
     items = await evaluate_products_from_file(
         resolved,
-        forbidden_repo.get_all(),
+        forbidden_list,
         pipeline,
         llm_matcher=llm_matcher,
         extraction_fallback=extraction_fallback,
-        forbidden_list_version=forbidden_repo.version_hash(),
+        forbidden_list_version=forbidden_list_version,
     )
 
     item = _single_result(items, source=body.path)
@@ -181,15 +194,20 @@ async def evaluate_batch_samples(
     with index_path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
 
-    forbidden_list = forbidden_repo.get_all()
-    paths = [settings.sample_data_dir / row["filename"] for row in rows]
+    forbidden_list, forbidden_list_version = forbidden_repo.snapshot()
+    try:
+        paths = [_resolve_within(settings.sample_data_dir, row["filename"]) for row in rows]
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=422, detail="product_index.csv must contain a filename column"
+        ) from exc
     outcomes = await evaluate_paths_concurrently(
         paths,
         forbidden_list,
         pipeline,
         llm_matcher=llm_matcher,
         extraction_fallback=extraction_fallback,
-        forbidden_list_version=forbidden_repo.version_hash(),
+        forbidden_list_version=forbidden_list_version,
     )
 
     results = [

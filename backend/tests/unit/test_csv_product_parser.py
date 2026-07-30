@@ -43,6 +43,28 @@ def test_comma_bearing_ingredient_is_preserved_since_comma_is_not_a_delimiter() 
     assert product.ingredients == ["1,4-Dioxane", "BHT"]
 
 
+def test_comma_delimited_cell_preserves_chemical_and_parenthetical_commas() -> None:
+    row = {
+        "product_name": "Test",
+        "ingredient list": "Water, Glycerin, 1,4-Dioxane, Fragrance (Parfum, Aroma)",
+    }
+
+    product = parse_csv_row(row)
+
+    assert product.ingredients == [
+        "Water",
+        "Glycerin",
+        "1,4-Dioxane",
+        "Fragrance (Parfum, Aroma)",
+    ]
+
+
+def test_extra_csv_columns_do_not_crash_header_normalization() -> None:
+    product = parse_csv_row({"Product Name": "X", "Ingredients": "Water", None: "extra"})
+
+    assert product.ingredients == ["Water"]
+
+
 def test_missing_ingredients_column_sets_llm_fallback_flag() -> None:
     row = {"product_name": "No Ingredients Product"}
 

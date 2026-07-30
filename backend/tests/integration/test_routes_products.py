@@ -70,3 +70,10 @@ def test_batch_samples_persists_all_30_evaluations(tmp_path, monkeypatch) -> Non
             assert len({item["product_id"] for item in items}) == 30
     finally:
         get_settings.cache_clear()
+
+
+def test_products_history_rejects_unbounded_or_negative_pagination() -> None:
+    with TestClient(create_app()) as client:
+        assert client.get("/api/products", params={"limit": 201}).status_code == 422
+        assert client.get("/api/products", params={"limit": 0}).status_code == 422
+        assert client.get("/api/products", params={"offset": -1}).status_code == 422

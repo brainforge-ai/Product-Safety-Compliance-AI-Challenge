@@ -117,3 +117,28 @@ def test_missing_product_name_defaults_to_unknown() -> None:
 
     assert product.product_name == "Unknown Product"
     assert product.ingredients == ["Water"]
+
+
+def test_parses_common_inline_ingredients_header_and_stops_at_warnings() -> None:
+    text = (
+        "Product Name: Generalized Label\n"
+        "Ingredients: Water, Glycerin, 1,4-Dioxane, Fragrance (Parfum, Aroma)\n"
+        "Warnings: For external use only\n"
+    )
+
+    product = parse_product_text(text)
+
+    assert product.ingredients == [
+        "Water",
+        "Glycerin",
+        "1,4-Dioxane",
+        "Fragrance (Parfum, Aroma)",
+    ]
+
+
+def test_parses_plain_ingredient_list_header_with_bullets() -> None:
+    text = "Product Name: X\nIngredient List:\n• Water\n• Coumarin\nDirections: Rinse\n"
+
+    product = parse_product_text(text)
+
+    assert product.ingredients == ["Water", "Coumarin"]

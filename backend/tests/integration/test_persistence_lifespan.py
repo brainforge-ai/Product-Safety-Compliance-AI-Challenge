@@ -49,6 +49,8 @@ def test_persistence_enabled_creates_expected_tables_in_a_fresh_process(tmp_path
     db_path = tmp_path / "app.db"
     env = {
         "ENABLE_PERSISTENCE": "true",
+        "ENABLE_EMBEDDING_MATCHING": "false",
+        "ENABLE_LLM_MATCHING": "false",
         "DATABASE_URL": f"sqlite:///{db_path}",
         "PATH": "/usr/bin:/bin",
     }

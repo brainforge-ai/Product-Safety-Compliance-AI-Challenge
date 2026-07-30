@@ -233,8 +233,6 @@ async def test_a_failed_call_does_not_poison_the_cache_as_a_permanent_negative()
     # A transient outage should not be cached the same way a genuine LLM
     # "no match" verdict is -- otherwise a temporary Gemini outage would
     # permanently suppress a real match for the lifetime of the process.
-    # Current behavior does cache failures as negative (fail-open trades
-    # off retry-ability for simplicity); this test documents that tradeoff.
     error_client = FakeLlmClient(error=RuntimeError("timeout"))
     cache = LlmResponseCache()
     matcher = LlmMatcher(error_client, cache)
@@ -242,7 +240,7 @@ async def test_a_failed_call_does_not_poison_the_cache_as_a_permanent_negative()
     await matcher.match_unresolved(["D-Glucopyranose"], FORBIDDEN_LIST, VERSION)
     hit, cached = cache.get("dglucopyranose", VERSION)
 
-    assert hit is True
+    assert hit is False
     assert cached is None
 
 

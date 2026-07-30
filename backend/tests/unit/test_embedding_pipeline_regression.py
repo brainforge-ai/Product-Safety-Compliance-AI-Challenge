@@ -71,7 +71,7 @@ def _build_pipeline_with_embeddings() -> MatchPipeline:
             FormulaMatcher(),
             FuzzyMatcher(),
             AcronymMatcher(),
-            EmbeddingMatcher(SentenceTransformerEncoder()),
+            EmbeddingMatcher(SentenceTransformerEncoder(local_files_only=True)),
         ]
     )
 

@@ -75,14 +75,8 @@ def test_file_with_an_ingredients_section_never_reaches_the_fallback() -> None:
         client.__exit__(None, None, None)
 
 
-def test_no_extraction_fallback_configured_leaves_the_product_with_zero_ingredients() -> None:
-    # Baseline: without ENABLE_LLM_MATCHING/GOOGLE_API_KEY set, the default
-    # (app.state.llm_extraction_fallback is None), a file missing an
-    # ingredients section is Accepted only because it resolves to zero
-    # ingredients -- never actually retried through an LLM. Set explicitly
-    # to None rather than relying on ambient `.env` state, so a local .env
-    # with the flag flipped on for live testing can never make this
-    # baseline silently spend real Gemini credits.
+def test_no_extraction_fallback_configured_rejects_an_unparseable_product() -> None:
+    # A parser miss must never become a false Accepted safety verdict.
     with TestClient(create_app()) as client:
         client.app.state.llm_extraction_fallback = None
         client.app.state.forbidden_list_repository.replace(["Coumarin"])
@@ -92,7 +86,6 @@ def test_no_extraction_fallback_configured_leaves_the_product_with_zero_ingredie
             "/api/evaluate", files={"files": ("product.txt", text_body, "text/plain")}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 422
         body = response.json()
-        assert body["product_name"] == "Mystery Serum"
-        assert body["status"] == "Accepted"
+        assert "Could not extract an ingredient list" in body["detail"]

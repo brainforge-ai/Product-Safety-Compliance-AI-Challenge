@@ -7,6 +7,7 @@ from rapidfuzz import fuzz
 
 from app.domain.matching.base import Matcher
 from app.domain.models import MatchMethod, MatchResult
+from app.domain.normalization.formula_parser import is_formula
 from app.domain.normalization.text_normalizer import normalize_text
 
 DEFAULT_FUZZY_THRESHOLD = 90.0
@@ -23,6 +24,11 @@ class FuzzyMatcher(Matcher):
         Uses rapidfuzz character-level ratio on normalized text. Requires
         score >= 90 to catch typos/OCR noise without matching distinct names.
         """
+        # Formula equality belongs exclusively to tier 2. Character similarity
+        # can otherwise false-match two long formulas that differ by one atom.
+        if is_formula(ingredient) or is_formula(forbidden_entry):
+            return None
+
         normalized_ingredient = normalize_text(ingredient)
         normalized_forbidden = normalize_text(forbidden_entry)
         if not normalized_ingredient or not normalized_forbidden:

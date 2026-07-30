@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from app.core.config import get_settings
+
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 # Hand-derived ground truth (see docs/IMPLEMENTATION_PLAN.md Phase 5 notes):
@@ -16,6 +18,17 @@ EXPECTED_ACCEPTED_PRODUCT_IDS = {
     "P-2025-0025",
     "P-2025-0028",
 }
+
+
+@pytest.fixture(autouse=True)
+def isolate_optional_features_from_local_env(monkeypatch):
+    """Keep the default suite offline regardless of a developer's .env."""
+    monkeypatch.setenv("ENABLE_EMBEDDING_MATCHING", "false")
+    monkeypatch.setenv("ENABLE_LLM_MATCHING", "false")
+    monkeypatch.setenv("ENABLE_PERSISTENCE", "false")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture

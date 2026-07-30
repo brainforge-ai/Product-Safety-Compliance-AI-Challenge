@@ -5,12 +5,15 @@ import hashlib
 from collections.abc import Iterable
 from io import StringIO
 from pathlib import Path
+from threading import RLock
 
 
 class ForbiddenListRepository:
     def __init__(self, entries: list[str]) -> None:
         """Hold an in-memory copy of forbidden ingredient entries."""
-        self._entries = list(entries)
+        self._lock = RLock()
+        self._entries = _unique_entries(entries)
+        self._version = _version_hash(self._entries)
 
     @classmethod
     def from_csv(cls, path: Path) -> "ForbiddenListRepository":
@@ -25,16 +28,25 @@ class ForbiddenListRepository:
 
     def get_all(self) -> list[str]:
         """Return a copy of all forbidden ingredient entries."""
-        return list(self._entries)
+        with self._lock:
+            return list(self._entries)
 
     def replace(self, entries: list[str]) -> None:
         """Replace the in-memory list with a new set of entries."""
-        self._entries = list(entries)
+        resolved = _unique_entries(entries)
+        with self._lock:
+            self._entries = resolved
+            self._version = _version_hash(resolved)
 
     def version_hash(self) -> str:
         """Stable, order-independent hash of the current entry set."""
-        canonical = "\n".join(sorted(e.strip().lower() for e in self._entries))
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        with self._lock:
+            return self._version
+
+    def snapshot(self) -> tuple[list[str], str]:
+        """Return entries and their matching version atomically."""
+        with self._lock:
+            return list(self._entries), self._version
 
 
 def parse_csv_entries(lines: Iterable[str]) -> list[str]:
@@ -44,3 +56,21 @@ def parse_csv_entries(lines: Iterable[str]) -> list[str]:
     if column is None:
         return []
     return [row[column].strip() for row in reader if row.get(column, "").strip()]
+
+
+def _unique_entries(entries: Iterable[str]) -> list[str]:
+    """Trim and de-duplicate entries case-insensitively, preserving order."""
+    unique: list[str] = []
+    seen: set[str] = set()
+    for entry in entries:
+        value = entry.strip()
+        key = value.casefold()
+        if value and key not in seen:
+            seen.add(key)
+            unique.append(value)
+    return unique
+
+
+def _version_hash(entries: Iterable[str]) -> str:
+    canonical = "\n".join(sorted(entry.casefold() for entry in entries))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

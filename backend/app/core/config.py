@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root from this file's location so sample paths work regardless of cwd.
@@ -29,6 +30,9 @@ class Settings(BaseSettings):
 
     enable_persistence: bool = False
     database_url: str = "sqlite:///./data/app.db"
+
+    max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
+    max_upload_files: int = Field(default=20, ge=1, le=100)
 
     default_forbidden_list_path: Path = _REPO_ROOT / "forbidden_ingredients.csv"
     sample_data_dir: Path = _REPO_ROOT

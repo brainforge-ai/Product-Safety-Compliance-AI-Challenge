@@ -11,7 +11,19 @@ _DESCRIPTION_RE = re.compile(
     r"Description\s*:\s*\n(.+?)(?=\n\s*Ingredients|\Z)", re.IGNORECASE | re.DOTALL
 )
 _INGREDIENTS_HEADER_RE = re.compile(
-    r"Ingredients\s*/?\s*Chemical\s*Formulas?\s*:", re.IGNORECASE
+    r"^\s*(?:ingredients?(?:\s*/\s*chemical\s*formulas?)?|"
+    r"ingredient\s+list|composition)\s*:\s*(.*)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# Product labels commonly put one of these sections after ingredients. Do not
+# accidentally treat warnings or directions as ingredients just because they
+# occur later in the extracted text.
+_END_SECTION_RE = re.compile(
+    r"^\s*(?:warnings?|cautions?|directions?|instructions?|usage|storage|"
+    r"manufacturer|manufactured\s+by|distributed\s+by|net\s+(?:weight|wt)|"
+    r"claims?)\s*:",
+    re.IGNORECASE,
 )
 
 # Strip a single leading bullet marker: either symbolic bullet characters, or
@@ -50,15 +62,61 @@ def _extract_field(pattern: re.Pattern[str], text: str, *, join_lines: bool = Fa
 
 
 def _extract_ingredients(text: str) -> list[str]:
-    """Parse bullet-listed ingredients following the ingredients header."""
+    """Parse inline, delimited, or bullet-listed ingredients.
+
+    The supplied samples use ``Ingredients / Chemical Formulas:``, but real
+    labels much more often use ``Ingredients:`` or ``Ingredient List:`` and
+    may put the whole list on the same line. Commas followed by whitespace are
+    treated as delimiters only outside parentheses, preserving names such as
+    ``1,4-Dioxane``.
+    """
     header_match = _INGREDIENTS_HEADER_RE.search(text)
     if not header_match:
         return []
 
-    section = text[header_match.end() :]
-    ingredients = []
-    for line in section.splitlines():
+    lines = [header_match.group(1), *text[header_match.end() :].splitlines()]
+    ingredients: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        if _END_SECTION_RE.match(line):
+            break
         cleaned = _BULLET_RE.sub("", line).strip()
-        if cleaned:
-            ingredients.append(cleaned)
+        if not cleaned:
+            continue
+        for ingredient in split_ingredient_list(cleaned):
+            key = ingredient.casefold()
+            if key not in seen:
+                seen.add(key)
+                ingredients.append(ingredient)
     return ingredients
+
+
+def split_ingredient_list(raw: str) -> list[str]:
+    """Split common ingredient delimiters while respecting bracketed text."""
+    parts: list[str] = []
+    start = 0
+    depth = 0
+    index = 0
+    while index < len(raw):
+        char = raw[index]
+        if char in "([":
+            depth += 1
+        elif char in ")]" and depth:
+            depth -= 1
+
+        comma_delimiter = char == "," and index + 1 < len(raw) and raw[index + 1].isspace()
+        if depth == 0 and (char in ";|" or comma_delimiter):
+            value = raw[start:index].strip()
+            if value:
+                parts.append(value)
+            index += 1
+            while index < len(raw) and raw[index].isspace():
+                index += 1
+            start = index
+            continue
+        index += 1
+
+    value = raw[start:].strip()
+    if value:
+        parts.append(value)
+    return parts

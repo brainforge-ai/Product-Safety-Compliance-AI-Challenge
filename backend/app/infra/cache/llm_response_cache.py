@@ -4,15 +4,22 @@ Keyed by (normalized_ingredient, forbidden_list_version) so list uploads
 invalidate stale verdicts without explicit eviction.
 """
 
+from collections import OrderedDict
+from threading import Lock
+
 from app.domain.models import MatchResult
 
 CacheKey = tuple[str, str]
 
 
 class LlmResponseCache:
-    def __init__(self) -> None:
+    def __init__(self, max_entries: int = 4096) -> None:
         """Create an in-memory cache keyed by ingredient and list version."""
-        self._store: dict[CacheKey, MatchResult | None] = {}
+        if max_entries < 1:
+            raise ValueError("max_entries must be positive")
+        self._max_entries = max_entries
+        self._store: OrderedDict[CacheKey, MatchResult | None] = OrderedDict()
+        self._lock = Lock()
 
     def get(
         self, normalized_ingredient: str, forbidden_list_version: str
@@ -21,9 +28,11 @@ class LlmResponseCache:
         cached negative outcome; check `hit` to distinguish the two.
         """
         key = (normalized_ingredient, forbidden_list_version)
-        if key in self._store:
-            return True, self._store[key]
-        return False, None
+        with self._lock:
+            if key in self._store:
+                self._store.move_to_end(key)
+                return True, self._store[key]
+            return False, None
 
     def set(
         self,
@@ -32,4 +41,9 @@ class LlmResponseCache:
         result: MatchResult | None,
     ) -> None:
         """Store a match result or cached negative for an ingredient."""
-        self._store[(normalized_ingredient, forbidden_list_version)] = result
+        key = (normalized_ingredient, forbidden_list_version)
+        with self._lock:
+            self._store[key] = result
+            self._store.move_to_end(key)
+            while len(self._store) > self._max_entries:
+                self._store.popitem(last=False)

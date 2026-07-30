@@ -12,6 +12,7 @@ from app.domain.extraction.base import Extractor
 
 # Higher than default 72 DPI so small label text stays legible after rasterization.
 _OCR_ZOOM = 2.0
+_MAX_PDF_PAGES = 100
 
 OcrFunc = Callable[[Image.Image], str]
 
@@ -27,33 +28,32 @@ class PdfExtractor(Extractor):
         self._ocr_func = ocr_func
 
     def extract(self, path: Path) -> str:
-        """Extract text from a PDF, falling back to OCR when pages have no text."""
+        """Extract text from each PDF page, OCRing only pages with no text layer."""
         try:
             with fitz.open(path) as doc:
-                # Fast path: use the embedded text layer when the PDF is not a scan.
-                text = "\n".join(page.get_text() for page in doc)
-                if text.strip():
-                    return text
-                # Scanned PDFs have no text layer - rasterize each page and OCR instead.
-                return self._ocr_fallback(doc)
+                if doc.page_count > _MAX_PDF_PAGES:
+                    raise ExtractionError(
+                        f"PDF has {doc.page_count} pages; maximum is {_MAX_PDF_PAGES}."
+                    )
+                pages_text = []
+                for page in doc:
+                    text = page.get_text()
+                    pages_text.append(text if text.strip() else self._ocr_page(page))
+                return "\n".join(pages_text)
         except RuntimeError as exc:
             raise ExtractionError(f"Could not parse PDF file: {path}") from exc
 
-    def _ocr_fallback(self, doc: fitz.Document) -> str:
-        """OCR every page when the PDF contains no extractable text layer."""
+    def _ocr_page(self, page: fitz.Page) -> str:
+        """Rasterize and OCR one page with no usable embedded text."""
         # Scale up rasterization so Tesseract sees label-sized text, not tiny glyphs.
         matrix = fitz.Matrix(_OCR_ZOOM, _OCR_ZOOM)
-        pages_text = []
         try:
-            for page in doc:
-                # Render page pixels, then hand a PIL image to Tesseract.
-                pixmap = page.get_pixmap(matrix=matrix)
-                image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
-                pages_text.append(self._ocr_func(image))
+            pixmap = page.get_pixmap(matrix=matrix, alpha=False)
+            image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+            return self._ocr_func(image)
         except pytesseract.TesseractNotFoundError as exc:
             raise ExtractionError(
                 "Tesseract OCR binary not found. Install it with "
                 "`brew install tesseract` (macOS) or `apt-get install "
                 "tesseract-ocr` (Linux), then retry."
             ) from exc
-        return "\n".join(pages_text)
