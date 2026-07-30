@@ -54,11 +54,11 @@ def decide(
     product: ExtractedProduct, forbidden_list: list[str], pipeline: MatchPipeline
 ) -> EvaluationResult:
     """Run the matcher pipeline on all ingredients and return Accept/Reject."""
-    matches = [
-        result
-        for ingredient in product.ingredients
-        if (result := pipeline.match_ingredient(ingredient, forbidden_list)) is not None
-    ]
+    matches: list[MatchResult] = []
+    for ingredient in product.ingredients:
+        result = pipeline.match_ingredient(ingredient, forbidden_list)
+        if result is not None:
+            matches.append(result)
     return _build_result(product.product_name, matches)
 
 

@@ -130,8 +130,9 @@ async def evaluate(
                 results=_to_batch_items(filename, items, evaluation_repo)
             )
 
+        paths = [path for _, path in staged]
         outcomes = await evaluate_paths_concurrently(
-            [path for _, path in staged],
+            paths,
             forbidden_list,
             pipeline,
             llm_matcher=llm_matcher,
@@ -139,12 +140,11 @@ async def evaluate(
             forbidden_list_version=forbidden_list_version,
         )
 
-        results = [
-            _to_batch_items(filename, outcome, evaluation_repo)
-            for (filename, _), outcome in zip(staged, outcomes, strict=True)
-        ]
+        results: list[BatchItemResult] = []
+        for (filename, _), outcome in zip(staged, outcomes, strict=True):
+            results.extend(_to_batch_items(filename, outcome, evaluation_repo))
 
-    return BatchEvaluationResponse(results=[item for group in results for item in group])
+    return BatchEvaluationResponse(results=results)
 
 
 @router.post("/evaluate/by-path", response_model=EvaluationResult)
@@ -210,12 +210,18 @@ async def evaluate_batch_samples(
         forbidden_list_version=forbidden_list_version,
     )
 
-    results = [
-        _to_batch_items(row["filename"], outcome, evaluation_repo, product_id=row.get("product_id"))
-        for row, outcome in zip(rows, outcomes, strict=True)
-    ]
+    results: list[BatchItemResult] = []
+    for row, outcome in zip(rows, outcomes, strict=True):
+        results.extend(
+            _to_batch_items(
+                row["filename"],
+                outcome,
+                evaluation_repo,
+                product_id=row.get("product_id"),
+            )
+        )
 
-    return BatchEvaluationResponse(results=[item for group in results for item in group])
+    return BatchEvaluationResponse(results=results)
 
 
 def _to_batch_items(

@@ -83,11 +83,11 @@ class LlmMatcher:
             results_by_ingredient.update(queried)
 
         # Preserve caller ingredient order; skip formulas and non-matches.
-        matches = [
-            result
-            for ingredient in ingredients
-            if (result := results_by_ingredient.get(ingredient)) is not None
-        ]
+        matches: list[MatchResult] = []
+        for ingredient in ingredients:
+            result = results_by_ingredient.get(ingredient)
+            if result is not None:
+                matches.append(result)
         return LlmMatchOutcome(matches=matches, usage=usage)
 
     async def _query_and_cache(
