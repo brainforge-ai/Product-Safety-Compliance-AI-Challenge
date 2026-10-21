@@ -85,16 +85,16 @@ The system should be **robust and generalizable**, i.e., able to handle new data
 ## 📦 Submission Instructions
 
 1. **Fork** this repository (you’ll receive access once selected for the challenge).
-2. Create a new branch named after yourself (e.g., `feature/jane-doe-solution`).
+2. Create a new branch named after yourself on your fork (e.g., `feature/jane-doe-solution`).
 3. Implement your solution within your branch.
-4. Submit a **Pull Request (PR)** to that fork when finished.
-5. Include in your PR description:
+4. **Do not open a pull request against `brainforge-ai`.**
+5. Add a short solution note to your fork's `README.md` covering:
 
    - Loom video link
    - Setup/Run instructions
    - Any assumptions made
 
-6. Share the private fork and email the branch link to the recruiting team.
+6. Email the fork URL and branch name to the recruiting team.
 
 ---
 
